@@ -20,10 +20,9 @@ TEST(Str_Char_Num_MPI, Paral_Char_Num_Eq_Not_Paral_Char_Num) {
     char *str;
     size_t strSize = 100;
 
-    if (rank == 0)
+    if (rank == 0) {
         str = getRandomString(strSize);
 
-    if (rank == 0) {
         int seqAnswer = getCarNum(str, strSize);
         int paralAnswer = getParalCarNum(str, strSize);
         ASSERT_EQ(seqAnswer, paralAnswer);
