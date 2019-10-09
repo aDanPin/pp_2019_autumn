@@ -46,26 +46,26 @@ int getParalCarNum(const char* str, int stringSize) {
 
     if (rank == 0) {
         for (int proc = 1; proc < size; ++proc)
-                MPI_Send(&global_cstr[rem] + proc * delta, delta, MPI_CHAR, proc, 0, MPI_COMM_WORLD);
+                MPI_Send(&global_cstr[rem + (proc - 1) * delta], delta, MPI_CHAR, proc, 0, MPI_COMM_WORLD);
     } else {
         MPI_Status status;
         MPI_Recv(&local_cstr[0], delta, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
     }
 
-    int ans;
+    int ans = 0;
+    int tmp = 0;
     if (rank == 0) {
-        for (int proc = 1; proc < size; ++proc) {
-            ans = getCarNum(global_cstr, rem);
-            int temp;
+        ans = getCarNum(global_cstr, rem);
+        for (int proc = 1; proc < size; ++proc){
             MPI_Status status;
-            MPI_Recv(&temp, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
-            ans += temp;
+            MPI_Recv(&tmp, 1, MPI_INT, proc, 1, MPI_COMM_WORLD, &status);
+            ans += tmp;
         }
     } else {
         ans = getCarNum(local_cstr, delta);
         MPI_Send(&ans, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
     }
-
+    
     delete[] local_cstr;
 
     return ans;
