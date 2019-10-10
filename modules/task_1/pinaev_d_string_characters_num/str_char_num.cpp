@@ -11,10 +11,10 @@ static int offset = 0;
 char* getRandomString(int stringSize) {
     std::mt19937 gen;
     gen.seed((unsigned)time(0) + ++offset);
-    
+
     char* str = new char[stringSize];
     std::string charArr = "abcdefghijklmnaoqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 ";
-    
+
     for (int i = 0; i < stringSize - 1; ++i)
         str[i] = charArr[gen() % charArr.size()];
     str[stringSize - 1] = '\0';
@@ -72,7 +72,7 @@ int getParalCarNum(const char* str, int stringSize) {
         ans = getCarNum(local_cstr, delta);
         MPI_Send(&ans, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
     }
-    
+
     delete[] local_cstr;
 
     return ans;
