@@ -38,9 +38,16 @@ int getParalCarNum(const char* str, int stringSize) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    const int delta = stringSize / size;
-    const int rem = stringSize % size;
-
+    int delta;
+    int rem;
+	if (size > 1) {
+		delta = stringSize / (size - 1);
+		rem = stringSize % (size - 1);
+	}
+	else {
+		delta = 0;
+		rem = stringSize;
+	}
     const char *global_cstr = str;
     char *local_cstr = new char[delta];
 
