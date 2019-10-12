@@ -2,9 +2,9 @@
 #include <mpi.h>
 #include <random>
 #include <ctime>
-#include <vector>
+#include <string>
 #include <stdexcept>
-#include "./str_char_num.h"
+#include "../../../modules/task_1/pinaev_d_string_characters_num/string_characters_num.h"
 
 static int offset = 0;
 
@@ -25,9 +25,9 @@ char* getRandomString(int stringSize) {
 int getCarNum(const char* str, int stringSize) {
     int ans = 0;
 
-    for(int i = 0; i<stringSize;++i)
-        if((str[i] >= 'a' && str[i]<='z') ||
-            (str[i] >= 'A' && str[i]<='Z'))
+    for (int i = 0; i < stringSize; ++i)
+        if ((str[i] >= 'a' && str[i] <= 'z') ||
+            (str[i] >= 'A' && str[i] <= 'Z'))
             ++ans;
 
     return ans;
@@ -40,14 +40,13 @@ int getParalCarNum(const char* str, int stringSize) {
 
     int delta;
     int rem;
-	if (size > 1) {
-		delta = stringSize / (size - 1);
-		rem = stringSize % (size - 1);
-	}
-	else {
-		delta = 0;
-		rem = stringSize;
-	}
+    if (size > 1) {
+        delta = stringSize / (size - 1);
+        rem = stringSize % (size - 1);
+    } else {
+        delta = 0;
+        rem = stringSize;
+        }
     const char *global_cstr = str;
     char *local_cstr = new char[delta];
 
@@ -63,7 +62,7 @@ int getParalCarNum(const char* str, int stringSize) {
     int tmp = 0;
     if (rank == 0) {
         ans = getCarNum(global_cstr, rem);
-        for (int proc = 1; proc < size; ++proc){
+        for (int proc = 1; proc < size; ++proc) {
             MPI_Status status;
             MPI_Recv(&tmp, 1, MPI_INT, proc, 1, MPI_COMM_WORLD, &status);
             ans += tmp;
