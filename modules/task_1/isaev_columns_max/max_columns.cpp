@@ -26,17 +26,7 @@ std::vector<int> getParallelMax(const std::vector<int>& mat, int n, int m) {
     int ProcRank, ProcNum;
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
-    std::vector<int> tmat(m*n);
     int codeErr = 0;
-    if ( ProcRank == 0 ) {
-        tmat = getTransposeMtx(mat, n, m);
-        for (int prcs = 1; prcs < ProcNum; prcs++) {
-            MPI_Send(&tmat[0], m*n, MPI_INT, prcs, 3, MPI_COMM_WORLD);
-        }
-    } else {
-        MPI_Status status;
-        MPI_Recv(&tmat[0], m*n, MPI_INT, 0, 3, MPI_COMM_WORLD, &status);
-    }
     int cols_delta = m / ProcNum;
     int cols_left = m % ProcNum;
 
@@ -52,15 +42,14 @@ std::vector<int> getParallelMax(const std::vector<int>& mat, int n, int m) {
     }
     if (codeErr == -1)
         throw -1;
+    std::vector<int> local_vec(cols_delta*n);
 
     if (ProcRank == 0) {
+        std::vector<int> tmat(m*n);
+        tmat = getTransposeMtx(mat, n, m);
         for (int prcs = 1; prcs < ProcNum; prcs++) {
             MPI_Send(&tmat[cols_left*n] + cols_delta*prcs*n, cols_delta*n, MPI_INT, prcs, 0, MPI_COMM_WORLD);
         }
-    }
-
-    std::vector<int> local_vec(cols_delta*n);
-    if (ProcRank == 0) {
         local_vec = std::vector<int>(tmat.begin(), tmat.begin() + cols_left*n + cols_delta*n);
     } else {
         MPI_Status status;
