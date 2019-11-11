@@ -24,8 +24,9 @@ MPI_Comm createStarComm(MPI_Comm old, int size) {
     return commStar;
 }
 
-bool testLinearTopology(MPI_Comm commLinear) {
-    if (!isLinearTopology(commLinear)) return false;
+bool testStarTopology(MPI_Comm commStar) {
+    if (!isStarTopology(commStar))
+        return false;
     int rank, size;
     int sourceLess, sourceBig, destLess, destBig;
     int new_coords[LINEARTOPOLEN];
@@ -54,15 +55,33 @@ bool testLinearTopology(MPI_Comm commLinear) {
     return true;
 }
 
-bool isLinearTopology(MPI_Comm new_comm) {
-    int curDims, topology;
-    MPI_Topo_test(new_comm, &topology);
-    if (topology != MPI_CART) return false;
-    MPI_Cartdim_get(new_comm, &curDims);
-    if (curDims != LINEARTOPOLEN) return false;
+bool isStarTopology(MPI_Comm cur_comm) {
+    int topo_type;
+    MPI_Topo_test(new_comm, &topo_type);
+    if (topology != MPI_GRAPH)
+        return false;
+    
+    int nnodes, nedges;
+    MPI_GRAPHDIMS_GET(cur_comm, &nnodes, &nedges);
+    
+    int index_size = nnodes;
+    int edges_size = 2 * (nnodes - 1);
+    int* index = new int[index_size];
+    int* edges = new int[edges_size];
+    MPI_GRAPH_GET(comm, index_size, edges_size, index, edges);
+    
+    bool flag = true;
+    for(int i = 0, j = nnodes - 1; i < index_size; i++, j++)
+        if(index[i] != j)
+            return false;
 
-    int dims[LINEARTOPOLEN], periods[LINEARTOPOLEN], coords[LINEARTOPOLEN];
-    MPI_Cart_get(new_comm, LINEARTOPOLEN, dims, periods, coords);
-    if (periods[0] != 0) return false;
+    for(int i = 0, j = 1; i < edges_size / 2; i++, j++)
+        if(edges[i] != j)
+            return false;
+
+    for(int i = nnodes - 1; i < edges_size; i++)
+        if(edges[i] != 0)
+            return false;
+
     return true;
 }
