@@ -1,69 +1,82 @@
 // Copyright 2019 Kurakin Mikhail
 #include <gtest/gtest.h>
 #include <gtest-mpi-listener.hpp>
-#include "./linear_topology.h"
-TEST(Linear_Topology_MPI, Linear_Comm_Can_Be_Only_One_Dim) {
-    int size, rank;
+#include "./star_topology.h"
+
+TEST(Star_Topology_MPI, isStarTopology_Return_Fals_With_Not_Graph_Topo) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0) {
+        EXPECT_FALSE(isStarTopology(MPI_COMM_WORLD));
+    }
+}
+
+TEST(Star_Topology_MPI, isStarTopology_Return_Fals_With_Not_Star_Topo) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int size;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm commLinear;
-    int dims[2]{0};
-    int periods[2]{0};
-    MPI_Dims_create(size, 2, dims);
-    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &commLinear);
+
+    int* index = new int[size];
+    int* edges = new int[size];
+    for(int i = 0; i < size; i++) {
+        index[i] = i + 1;
+        edges[i] = i + 1;
+    }
+    
+    int reorder = 0;
+    MPI_Comm newComm;
+    MPI_Graph_create(MPI_COMM_WORLD, size, index, edges, reorder, &newComm);
+
     if (rank == 0) {
-        EXPECT_FALSE(isLinearTopology(commLinear));
+        EXPECT_FALSE(isStarTopology(newComm));
     }
 }
 
-TEST(Linear_Topology_MPI, Linear_Comm_Can_Not_Be_Periodic) {
-    int size, rank;
+TEST(Star_Topology_MPI, isStarTopology_Return_True_With_Star_Topo) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int size;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm commLinear;
-    int dims[1]{0};
-    int periods[1]{1};
-    MPI_Dims_create(size, 1, dims);
-    MPI_Cart_create(MPI_COMM_WORLD, 1, dims, periods, 0, &commLinear);
+
+    int nnodes = size;
+
+    int* index = new int[nnodes];
+    for (int i = 0, j = nnodes - 1; i < nnodes; i++, j++)
+        index[i] = j;
+
+    int* edges = new int[(nnodes - 1) * 2];
+    for (int i = 0; i < nnodes - 1; i++)
+        edges[i] = i + 1;
+    for (int i = nnodes - 1; i < (nnodes - 1) * 2; i++)
+        edges[i] = 0;
+
+    int reorder = 0;
+    MPI_Comm newComm;
+    MPI_Graph_create(MPI_COMM_WORLD, nnodes, index, edges, reorder, &newComm);
+
     if (rank == 0) {
-        EXPECT_FALSE(isLinearTopology(commLinear));
+        EXPECT_TRUE(isStarTopology(newComm));
     }
 }
 
-TEST(Linear_Topology_MPI, Linear_Comm_Can_Be_Only_Cart) {
+TEST(Star_Topology_MPI, Created_Commincator_Is_Star) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm commStar = createStarComm(MPI_COMM_WORLD);
     if (rank == 0) {
-        EXPECT_FALSE(isLinearTopology(MPI_COMM_WORLD));
+        EXPECT_TRUE(isStarTopology(commStar));
     }
 }
 
-TEST(Linear_Topology_MPI, Created_Commincator_Is_Linear) {
+TEST(Star_Topology_MPI, Created_Communicator_With_Diff_Size_Is_Star) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm commLinear = createLinearComm(MPI_COMM_WORLD);
+    MPI_Comm commStar = createStarComm(MPI_COMM_WORLD);
     if (rank == 0) {
-        EXPECT_TRUE(isLinearTopology(commLinear));
+        EXPECT_TRUE(isStarTopology(commStar));
+        MPI_Comm_free(&commStar);
     }
-}
-
-TEST(Linear_Topology_MPI, Created_Communicator_With_Diff_Size_Is_Linear) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm commLinear = createLinearComm(MPI_COMM_WORLD, 2);
-    if (rank == 0) {
-        EXPECT_TRUE(isLinearTopology(commLinear));
-        MPI_Comm_free(&commLinear);
-    }
-}
-
-TEST(Linear_Topology_MPI, Test_Communication_Linear_Topology) {
-    MPI_Comm commLinear = createLinearComm(MPI_COMM_WORLD);
-    EXPECT_TRUE(testLinearTopology(commLinear));
-}
-
-TEST(Linear_Topology_MPI, Can_Not_Communicate_With_Not_Linear_Topology) {
-    EXPECT_FALSE(testLinearTopology(MPI_COMM_WORLD));
 }
 
 int main(int argc, char** argv) {
