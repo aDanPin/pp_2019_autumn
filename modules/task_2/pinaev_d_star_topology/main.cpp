@@ -1,4 +1,4 @@
-// Copyright 2019 Kurakin Mikhail
+// Copyright 2019 Pinaev Danil
 #include <gtest/gtest.h>
 #include <gtest-mpi-listener.hpp>
 #include "./star_topology.h"
