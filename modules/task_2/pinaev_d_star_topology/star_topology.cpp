@@ -31,26 +31,26 @@ bool isStarTopology(MPI_Comm cur_comm) {
     MPI_Topo_test(cur_comm, &topo_type);
     if (topo_type != MPI_GRAPH)
         return false;
-    
+
     int nnodes, nedges;
     MPI_Graphdims_get(cur_comm, &nnodes, &nedges);
-    
+
     int index_size = nnodes;
     int edges_size = 2 * (nnodes - 1);
     int* index = new int[index_size];
     int* edges = new int[edges_size];
     MPI_Graph_get(cur_comm, index_size, edges_size, index, edges);
-    
-    for(int i = 0, j = nnodes - 1; i < index_size; i++, j++)
-        if(index[i] != j)
+
+    for (int i = 0, j = nnodes - 1; i < index_size; i++, j++)
+        if (index[i] != j)
             return false;
 
-    for(int i = 0, j = 1; i < edges_size / 2; i++, j++)
-        if(edges[i] != j)
+    for (int i = 0, j = 1; i < edges_size / 2; i++, j++)
+        if (edges[i] != j)
             return false;
 
-    for(int i = nnodes - 1; i < edges_size; i++)
-        if(edges[i] != 0)
+    for (int i = nnodes - 1; i < edges_size; i++)
+        if (edges[i] != 0)
             return false;
 
     return true;

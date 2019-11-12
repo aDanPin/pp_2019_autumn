@@ -19,11 +19,11 @@ TEST(Star_Topology_MPI, isStarTopology_Return_Fals_With_Not_Star_Topo) {
 
     int* index = new int[size];
     int* edges = new int[size];
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
         index[i] = i + 1;
         edges[i] = i + 1;
     }
-    
+
     int reorder = 0;
     MPI_Comm newComm;
     MPI_Graph_create(MPI_COMM_WORLD, size, index, edges, reorder, &newComm);
