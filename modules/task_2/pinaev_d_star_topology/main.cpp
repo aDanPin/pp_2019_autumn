@@ -1,6 +1,7 @@
 // Copyright 2019 Kurakin Mikhail
 #include <gtest/gtest.h>
 #include <gtest-mpi-listener.hpp>
+#include <vector>
 #include "./star_topology.h"
 
 TEST(Star_Topology_MPI, isStarTopology_Return_Fals_With_Not_Graph_Topo) {
@@ -75,6 +76,70 @@ TEST(Star_Topology_MPI, Created_Communicator_With_Diff_Size_Is_Star) {
     MPI_Comm commStar = createStarComm(MPI_COMM_WORLD);
     if (rank == 0) {
         EXPECT_TRUE(isStarTopology(commStar));
+        MPI_Comm_free(&commStar);
+    }
+}
+
+TEST(Star_Topology_MPI, Created_Star_Topology_Can_Find_Sum_Of_Vector_Values) {
+    int len = 16;
+    std::vector<int> vec(len);
+    int answer = 0;
+    int right_answer = 0;
+
+    for (int i = 0; i < len; i++) {
+        vec[i] = i;
+        right_answer += i;
+    }
+
+    int size, rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm commStar = createStarComm(MPI_COMM_WORLD);
+
+    if (size > len) {
+        for (int i = 0; i < len; i++) {
+            answer += vec[i];
+        }
+    } else {
+        int delta = len / size;
+        int delta_step = len % size;
+
+        if (rank == 0) {
+            for (int proc = 1; proc < size; proc++) {
+                MPI_Send(&vec[0] + proc * delta + delta_step, delta, MPI_INT,
+                         proc, 0, commStar);
+            }
+        }
+
+        std::vector<int> local_vec(delta);
+
+        if (rank == 0) {
+            local_vec = std::vector<int>(vec.begin(),
+                                         vec.begin() + delta + delta_step);
+        } else {
+            MPI_Status st;
+            MPI_Recv(&local_vec[0], delta, MPI_INT, 0, 0,
+                     commStar, &st);
+        }
+
+        int result = 0;
+        if (rank != 0) {
+            for (int i = 0; i < delta; i++) {
+                result += local_vec[i];
+            }
+        } else {
+            for (int i = 0; i < delta + delta_step; i++) {
+                result += local_vec[i];
+            }
+        }
+
+        MPI_Barrier(commStar);
+        MPI_Reduce(&result, &answer, 1, MPI_INT, MPI_SUM,
+                    0, commStar);
+    }
+
+    if (rank == 0) {
+        EXPECT_EQ(answer, right_answer);
         MPI_Comm_free(&commStar);
     }
 }
