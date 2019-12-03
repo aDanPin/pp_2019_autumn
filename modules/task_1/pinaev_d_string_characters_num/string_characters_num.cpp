@@ -33,10 +33,10 @@ int getCarNum(const char* str, int stringSize) {
     return ans;
 }
 
-int getParalCarNum(const char* str, int stringSize) {
+int getParalCarNum(const char* str, int stringSize, MPI_Comm cur_comm) {
     int size, rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(cur_comm, &size);
+    MPI_Comm_rank(cur_comm, &rank);
 
     int delta;
     int rem;
@@ -52,10 +52,10 @@ int getParalCarNum(const char* str, int stringSize) {
 
     if (rank == 0) {
         for (int proc = 1; proc < size; ++proc)
-                MPI_Send(&global_cstr[rem + (proc - 1) * delta], delta, MPI_CHAR, proc, 0, MPI_COMM_WORLD);
+                MPI_Send(&global_cstr[rem + (proc - 1) * delta], delta, MPI_CHAR, proc, 0, cur_comm);
     } else {
         MPI_Status status;
-        MPI_Recv(&local_cstr[0], delta, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
+        MPI_Recv(&local_cstr[0], delta, MPI_CHAR, 0, 0, cur_comm, &status);
     }
 
     int ans = 0;
@@ -64,12 +64,12 @@ int getParalCarNum(const char* str, int stringSize) {
         ans = getCarNum(global_cstr, rem);
         for (int proc = 1; proc < size; ++proc) {
             MPI_Status status;
-            MPI_Recv(&tmp, 1, MPI_INT, proc, 1, MPI_COMM_WORLD, &status);
+            MPI_Recv(&tmp, 1, MPI_INT, proc, 1, cur_comm, &status);
             ans += tmp;
         }
     } else {
         ans = getCarNum(local_cstr, delta);
-        MPI_Send(&ans, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+        MPI_Send(&ans, 1, MPI_INT, 0, 1, cur_comm);
     }
 
     delete[] local_cstr;

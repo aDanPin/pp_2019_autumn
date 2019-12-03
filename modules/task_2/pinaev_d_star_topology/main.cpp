@@ -80,67 +80,59 @@ TEST(Star_Topology_MPI, Created_Communicator_With_Diff_Size_Is_Star) {
     }
 }
 
-TEST(Star_Topology_MPI, Created_Star_Topology_Can_Find_Sum_Of_Vector_Values) {
-    int len = 16;
-    std::vector<int> vec(len);
-    int answer = 0;
-    int right_answer = 0;
-
-    for (int i = 0; i < len; i++) {
-        vec[i] = i;
-        right_answer += i;
-    }
-
-    int size, rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+TEST(Star_Topology_MPI, Created_Star_Topo_Size_Eq_World_Comm_Size) {
+    int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm commStar = createStarComm(MPI_COMM_WORLD);
+    if (rank == 0) {
+        int world_size, star_size;
+        MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+        MPI_Comm_size(commStar, &star_size);
 
-    if (size > len) {
-        for (int i = 0; i < len; i++) {
-            answer += vec[i];
-        }
-    } else {
-        int delta = len / size;
-        int delta_step = len % size;
+        EXPECT_TRUE(isStarTopology(commStar));
+        EXPECT_EQ(world_size, star_size);
+        MPI_Comm_free(&commStar);
+    }
+}
 
-        if (rank == 0) {
-            for (int proc = 1; proc < size; proc++) {
-                MPI_Send(&vec[0] + proc * delta + delta_step, delta, MPI_INT,
-                         proc, 0, commStar);
-            }
-        }
+TEST(Star_Topology_MPI, Performance_Test) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-        std::vector<int> local_vec(delta);
+    double stand_topo_start, stand_topo_end, stand_time,
+           star_topo_start, star_topo_end, star_time;
+    int cur_ans, stand_ans, star_ans;
 
-        if (rank == 0) {
-            local_vec = std::vector<int>(vec.begin(),
-                                         vec.begin() + delta + delta_step);
-        } else {
-            MPI_Status st;
-            MPI_Recv(&local_vec[0], delta, MPI_INT, 0, 0,
-                     commStar, &st);
-        }
-
-        int result = 0;
-        if (rank != 0) {
-            for (int i = 0; i < delta; i++) {
-                result += local_vec[i];
-            }
-        } else {
-            for (int i = 0; i < delta + delta_step; i++) {
-                result += local_vec[i];
-            }
-        }
-
-        MPI_Barrier(commStar);
-        MPI_Reduce(&result, &answer, 1, MPI_INT, MPI_SUM,
-                    0, commStar);
+    char *str;
+    size_t strSize = 1000000;
+    if (rank == 0) {
+        str = getRandomString(strSize);
+        cur_ans = getCarNum(str, strSize);
     }
 
+
+    stand_topo_start = MPI_Wtime();
+    stand_ans = getParalCarNum(str, strSize, MPI_COMM_WORLD);
+    stand_topo_end = MPI_Wtime();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    MPI_Comm commStar = createStarComm(MPI_COMM_WORLD);
+
+    star_topo_start = MPI_Wtime();
+    star_ans = getParalCarNum(str, strSize, commStar);
+    star_topo_end = MPI_Wtime();
+
+    MPI_Barrier(commStar);
+    MPI_Comm_free(&commStar);
+
+    stand_time = stand_topo_end - stand_topo_start;
+    star_time = star_topo_end - star_topo_start;
+
     if (rank == 0) {
-        EXPECT_EQ(answer, right_answer);
-        MPI_Comm_free(&commStar);
+        EXPECT_EQ(cur_ans, stand_ans);
+        EXPECT_EQ(stand_ans, star_ans);
+        EXPECT_GT(stand_time, star_time);
     }
 }
 

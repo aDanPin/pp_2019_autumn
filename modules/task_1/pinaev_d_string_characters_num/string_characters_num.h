@@ -7,6 +7,7 @@
 
 char* getRandomString(int stringSize);
 int getCarNum(const char* str, int stringSize);
-int getParalCarNum(const char* str, int stringSize);
+int getParalCarNum(const char* str, int stringSize, MPI_Comm cur_comm);
+
 
 #endif  // MODULES_TASK_1_PINAEV_D_STRING_CHARACTERS_NUM_STRING_CHARACTERS_NUM_H_

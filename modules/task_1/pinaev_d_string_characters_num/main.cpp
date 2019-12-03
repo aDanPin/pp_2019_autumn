@@ -26,9 +26,13 @@ TEST(Str_Char_Num_MPI, Paral_Char_Num_Eq_Not_Paral_Char_Num) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     char *str;
-    size_t strSize = 10000;
-    str = getRandomString(strSize);
-    int paralAnswer = getParalCarNum(str, strSize);
+    size_t strSize = 1000;
+
+    if (rank == 0) {
+        str = getRandomString(strSize);
+    }
+
+    int paralAnswer = getParalCarNum(str, strSize, MPI_COMM_WORLD);
 
     if (rank == 0) {
         int seqAnswer = getCarNum(str, strSize);
@@ -42,12 +46,51 @@ TEST(Str_Char_Num_MPI, Paral_Char_Num_Can_Process_Not_All_Vector) {
 
     char *str;
     size_t strSize = 10000;
-    str = getRandomString(strSize);
-    int paralAnswer = getParalCarNum(str, strSize / 2);
 
     if (rank == 0) {
-        int seqAnswer = getCarNum(str, strSize / 2);
+        str = getRandomString(strSize);
+    }
+
+    int paralAnswer = getParalCarNum(str, strSize / 2, MPI_COMM_WORLD);
+
+    int seqAnswer;
+    if (rank == 0)
+        seqAnswer = getCarNum(str, strSize / 2);
+
+    if (rank == 0) {
         ASSERT_EQ(seqAnswer, paralAnswer);
+    }
+}
+
+TEST(Str_Char_Num_MPI, Perf_Test) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    double stand_start, stand_end, stand_time,
+           par_start, par_end, par_time;
+    int paralAnswer, seqAnswer;
+
+    char *str;
+    size_t strSize = 10000;
+    if (rank == 0) {
+        str = getRandomString(strSize);
+    }
+
+    par_start = MPI_Wtime();
+    paralAnswer = getParalCarNum(str, strSize, MPI_COMM_WORLD);
+    par_end = MPI_Wtime();
+
+    stand_start = MPI_Wtime();
+    if (rank == 0)
+        seqAnswer = getCarNum(str, strSize);
+    stand_end = MPI_Wtime();
+
+    stand_time = stand_end - stand_start;
+    par_time = par_end - par_start;
+
+    if (rank == 0) {
+        ASSERT_EQ(seqAnswer, paralAnswer);
+        ASSERT_GT(stand_time, par_time);
     }
 }
 
