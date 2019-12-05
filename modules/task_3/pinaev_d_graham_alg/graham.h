@@ -18,16 +18,6 @@ struct point{
   }
 };
 
-struct vec{
-    point first_p, second_p;
-    vec(point f, point s)
-        : first_p(f), second_p(s){}
-    vec(){
-      first_p = point();
-      second_p = point();
-    }
-};
-
 std::vector<point> getRandomArray(size_t size, double max_X, double max_Y);
 double vectorMultiplication(vec first, vec second);
 std::stack<point, std::vector<point>> sortArray(std::vector<point> in_arr);
