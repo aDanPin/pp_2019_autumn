@@ -12,14 +12,14 @@ TEST(Core_Functionality, Lowest_point) {
 
     if (rank == 0) {
         // (0, 100) (100, 0) (5, 5) (63, -10) (-10, 0) (0, 0)
-        // lowest - is 3
+        // lowest - is 4
         std::vector<point> points(0);
-        points.emplace_back(point(1000, 100));
-        points.emplace_back(point(100, 0));
-        points.emplace_back(point(5, 5));
-        points.emplace_back(point(63, -100));
-        points.emplace_back(point(-1000, 0));
-        points.emplace_back(point(0, 0));
+        points.push_back(point(1000, 100));
+        points.push_back(point(100, 0));
+        points.push_back(point(5, 5));
+        points.push_back(point(63, -100));
+        points.push_back(point(-1000, 0));
+        points.push_back(point(0, 0));
 
         int ans = LowestPoint(points);
 
@@ -30,7 +30,7 @@ TEST(Core_Functionality, Lowest_point) {
 TEST(Core_Functionality, ccw) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // FIXME: check accuracy  
+
     if (rank == 0) {
         std::vector<double> ang;
         std::vector<point> points;
@@ -50,7 +50,7 @@ TEST(Core_Functionality, ccw) {
 TEST(Core_Functionality, Sort) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // FIXME: check accuracy  
+
     if (rank == 0) {
         std::vector<point> points(0);
 
@@ -80,7 +80,80 @@ TEST(Core_Functionality, Sort) {
 TEST(Core_Functionality, HullGraham) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // FIXME: check accuracy  
+
+    if (rank == 0) {
+        std::vector<point> points(0);
+        std::vector<int> indexes(0);
+        point p22 = point(2, 2, 0); // not in hall
+        point p42 = point(4, 2, 1); // 3
+        point p24 = point(2, 4, 2); // 4
+        point pm11 = point(-1, 1, 3); // 1
+        point p1m1 = point(1, -1, 4); // 2
+
+        points.push_back(p22);
+        points.push_back(p42);
+        points.push_back(p24);
+        points.push_back(pm11);
+        points.push_back(p1m1);
+
+//        std::cout<<"Points"<<std::endl;
+//        for(size_t i = 0; i< points.size(); ++i)
+//            std::cout<<points[i].index<<std::endl;
+
+        int first_index = LowestPoint(points);
+        Sort(points, first_index);
+        HullGraham(points, indexes);
+
+
+//        std::cout<<"Points"<<std::endl;
+//        for(size_t i = 0; i< points.size(); ++i)
+//            std::cout<<points[i].index<<std::endl;
+//
+//
+//        std::cout<<"Indexes"<<std::endl;
+//        for(size_t i = 0; i< indexes.size(); ++i)
+//            std::cout<<indexes[i]<<std::endl;
+
+        ASSERT_EQ(indexes[0], 0);
+        ASSERT_EQ(indexes[1], 1);
+        ASSERT_EQ(indexes[2], 2);
+        ASSERT_EQ(indexes[3], 4);
+    }
+}
+
+TEST(GrahamAlg, isConvexHull) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+        std::vector<point> points(0);
+
+        point p22 = point(2, 2); // 0
+        point p42 = point(4, 2); // 1
+        point p24 = point(2, 4); // 2
+        point pm11 = point(-1, 1); // 3
+        point p1m1 = point(1, -1); // 4
+
+        points.push_back(p22);
+        points.push_back(p42);
+        points.push_back(p24);
+        points.push_back(pm11);
+        points.push_back(p1m1);
+
+        // Convex hull - {3, 4, 1, 2}
+        std::vector<int>convHull = {3, 4, 1, 2};
+        ASSERT_TRUE(isConvexHull(points, convHull));
+        
+        // Not convex hull - {3, 4, 1, 0, 2}
+        std::vector<int>notConvHull = {3, 4, 1, 0, 2};
+        ASSERT_FALSE(isConvexHull(points, notConvHull));
+    }
+}
+
+TEST(GrahamAlg, getConvexHull_Static_Points) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     if (rank == 0) {
         std::vector<point> points(0);
         std::vector<int> indexes(0);
@@ -100,21 +173,10 @@ TEST(Core_Functionality, HullGraham) {
         Sort(points, first_index);
         HullGraham(points, indexes);
 
-        ASSERT_EQ(indexes[0], 3);
-        ASSERT_EQ(indexes[1], 4);
-        ASSERT_EQ(indexes[2], 1);
-        ASSERT_EQ(indexes[3], 2);
+        ASSERT_TRUE(isConvexHull(points, indexes));
     }
 }
 
-//TEST(Core_Functionality, leftTurn) {
-//    ASSERT_EQ(0.0, ans);
-//}
-//
-//TEST(Core_Functionality, Stack) {
-//    ASSERT_EQ(0.0, ans);
-//}
-//
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   MPI_Init(&argc, &argv);

@@ -22,7 +22,7 @@ std::vector<point> getRandomArray(size_t size, int max_X,
     for(size_t i = 0; i < size; ++i) {
         x = gen() % max_X;
         y = gen() % max_Y;
-        points.push_back(point(x, y, i));
+        points.push_back(point(x, y));
     }
 
     return points;
@@ -68,6 +68,14 @@ void Sort(std::vector<point>& p, int first_index) {
     });
 }
 
+void ParallelSort(std::vector<point>& p, int first_index) {
+    int size, rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    
+}
+
 void HullGraham (std::vector<point>& p, std::vector<int> &ip) {
     // первая точка оболочки
     ip.push_back(0);
@@ -92,6 +100,26 @@ void HullGraham (std::vector<point>& p, std::vector<int> &ip) {
         }
     }
 
-    for (i = 0; i < ip.size(); ++ i)
-        ip[i] = p[ip[i]].index;
+//    for (i = 0; i < ip.size(); ++ i)
+//        ip[i] = p[ip[i]].index;
+}
+
+bool isConvexHull(std::vector<point>& p, std::vector<int> &ip) {
+    if(ip.size() < 3)
+        return false;
+
+    bool flag = true;
+    for(size_t i = 2; i < ip.size(); ++i)
+        if(ccw(p[ip[i]], p[ip[i-1]], p[ip[i-2]])){
+            flag = false;
+            break;
+        }
+
+    return flag;
+}
+
+void getConvexHull(std::vector<point>& p, std::vector<int> &ip) {
+        int first_index = LowestPoint(p);
+        Sort(p, first_index );
+        HullGraham(p, ip);
 }
