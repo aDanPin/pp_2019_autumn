@@ -47,36 +47,36 @@ TEST(Core_Functionality, ccw) {
     }
 }
 
-TEST(Core_Functionality, Sort) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    if (rank == 0) {
-        std::vector<point> points(0);
-
-        point p22 = point(2, 2);
-        point p42 = point(4, 2);
-        point p24 = point(2, 4);
-        point pm11 = point(-1, 1);
-        point p1m1 = point(1, -1);
-
-        points.push_back(p22);
-        points.push_back(p42);
-        points.push_back(p24);
-        points.push_back(pm11);
-        points.push_back(p1m1);
-
-        int first_index = LowestPoint(points);
-        Sort(points, first_index);
-
-        ASSERT_EQ(0, 0); // ??
-        //ASSERT_EQ(points[0].index, pm11.index);
-        //ASSERT_EQ(points[1].index, p1m1.index);
-        //ASSERT_EQ(points[2].index, p42.index);
-        //ASSERT_EQ(points[3].index, p22.index);
-        //ASSERT_EQ(points[4].index, p24.index);
-    }
-}
+//TEST(Core_Functionality, Sort) {
+//    int rank;
+//    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//
+//    if (rank == 0) {
+//        std::vector<point> points(0);
+//
+//        point p22 = point(2, 2);
+//        point p42 = point(4, 2);
+//        point p24 = point(2, 4);
+//        point pm11 = point(-1, 1);
+//        point p1m1 = point(1, -1);
+//
+//        points.push_back(p22);
+//        points.push_back(p42);
+//        points.push_back(p24);
+//        points.push_back(pm11);
+//        points.push_back(p1m1);
+//
+//        int first_index = LowestPoint(points);
+//        Sort(points, points[first_index]);
+//
+//        ASSERT_EQ(0, 0); // ??
+//        //ASSERT_EQ(points[0].index, pm11.index);
+//        //ASSERT_EQ(points[1].index, p1m1.index);
+//        //ASSERT_EQ(points[2].index, p42.index);
+//        //ASSERT_EQ(points[3].index, p22.index);
+//        //ASSERT_EQ(points[4].index, p24.index);
+//    }
+//}
 
 TEST(Core_Functionality, Merge) {
     int rank;
@@ -96,7 +96,9 @@ TEST(Core_Functionality, Merge) {
 
         point first_point(-1, 0);
 
-        Merge(points1, points2, dest, first_point);
+        dest = Merge(points1, points2
+                    , points1.size(), points2.size()
+                    , first_point);
 
         for(int i = 0; i < 6; ++i)
             ASSERT_EQ(dest[i].y, i);
@@ -123,7 +125,8 @@ TEST(Core_Functionality, HullGraham) {
         points.push_back(p1m1);
 
         int first_index = LowestPoint(points);
-        Sort(points, first_index);
+        std::swap(points[0], points[first_index]);
+        Sort(points, points[0]);
         HullGraham(points, indexes);
 
         ASSERT_EQ(indexes[0], 0);
@@ -181,9 +184,35 @@ TEST(GrahamAlg, getConvexHull_Static_Points) {
         points.push_back(pm11);
         points.push_back(p1m1);
 
-        int first_index = LowestPoint(points);
-        Sort(points, first_index);
-        HullGraham(points, indexes);
+        getConvexHull(points, indexes);
+
+        ASSERT_TRUE(isConvexHull(points, indexes));
+    }
+}
+
+TEST(GrahamAlg, getConvexHull_Random_Points) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+        std::vector<point> points = getRandomArray(10000);
+        std::vector<int> indexes(0);
+
+        getConvexHull(points, indexes);
+
+        ASSERT_TRUE(isConvexHull(points, indexes));
+    }
+}
+
+TEST(GrahamAlg, getConvexHullParellel_Random_Points) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+        std::vector<point> points = getRandomArray(10000);
+        std::vector<int> indexes(0);
+
+        getConvexHullParellel(points, indexes);
 
         ASSERT_TRUE(isConvexHull(points, indexes));
     }
