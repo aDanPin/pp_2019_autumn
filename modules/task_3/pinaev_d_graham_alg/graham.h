@@ -8,17 +8,14 @@
 struct point{
     double x, y;
     //FIXME: index used only for tesing
-    int index;
-    point(double X, double Y, int idx = 0){
+    point(double X, double Y){
         x = X;
         y = Y;
-        index = idx;
     }
 
     point(){
         x = 0;
         y = 0;
-        index = 0;
     }
 };
 
@@ -27,6 +24,8 @@ int LowestPoint(std::vector<point>& points); // find lowest point
 void Sort(std::vector<point>& p, int first_index); // sort points
 void ParallelSort(std::vector<point>& p, int first_index); //parallel sort points
 void HullGraham (std::vector<point>& p, std::vector<int> &ip); // Get a hull
+void Merge(std::vector<point>& src1, std::vector<point> src2
+          , std::vector<point>& dest, point first_point);
 
 int ccw (point p0, point p1, point p2);
 double dist (point p1, point p2);

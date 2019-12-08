@@ -58,14 +58,45 @@ double dist (point p1, point p2) {
 
 void Sort(std::vector<point>& p, int first_index) {
     const point first = p[first_index];
+    std::swap(p[0], p[first_index]);
     std::sort (p.begin(), p.end()
     , [&](const point& a, const point& b){
-        if (a.index == first.index) return true;
-        if (b.index == first.index) return false;
+        //if (a.index == first.index) return true;
+        //if (b.index == first.index) return false;
         if (ccw (first, a, b)) return true;
         if (ccw (first, b, a)) return false;
         return dist (first, a) > dist (first, b);
     });
+}
+
+void Merge(std::vector<point>& src1, std::vector<point> src2
+          , std::vector<point>& dest, point first_point) {
+
+    dest.resize(src1.size() + src1.size());
+
+    size_t i = 0, j = 0, k = 0;
+    while(i < src1.size() && j < src2.size()) {
+        if(ccw (first_point, src1[i], src2[j])){ // src1 is lowest
+            dest[k] = src1[i];
+            ++i; ++k;
+        } else {
+            dest[k] = src2[j];
+            ++j; ++k;
+        }
+    }
+    // one of src arrs is not completed
+    if(i < src1.size()) {
+        while (i < src1.size()) {
+            dest[k] = src1[i];
+            ++i; ++k;
+        }
+    } else
+    if (j < src2.size()) {
+        while (j < src2.size()) {
+            dest[k] = src2[j];
+            ++j; ++k;
+        }
+    }
 }
 
 void ParallelSort(std::vector<point>& p, int first_index) {
@@ -73,7 +104,15 @@ void ParallelSort(std::vector<point>& p, int first_index) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    MPI_Datatype MPI_Point;
+    MPI_Type_contiguous(2, MPI_DOUBLE, &MPI_Point);
+    MPI_Type_commit(&MPI_Point);
+
     
+
+
+
+    MPI_Type_free(&MPI_Point);
 }
 
 void HullGraham (std::vector<point>& p, std::vector<int> &ip) {
@@ -119,7 +158,14 @@ bool isConvexHull(std::vector<point>& p, std::vector<int> &ip) {
 }
 
 void getConvexHull(std::vector<point>& p, std::vector<int> &ip) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if(rank == 0) {
         int first_index = LowestPoint(p);
         Sort(p, first_index );
         HullGraham(p, ip);
+    }
 }
+
+
