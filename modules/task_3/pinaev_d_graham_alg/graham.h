@@ -24,6 +24,7 @@ struct point{
 bool Greater(point a, point b); // point b greater point a
 int LowestPoint(std::vector<point>& points); // find lowest point
 void Sort(std::vector<point>& p, int first_index); // sort points
+void HullGraham (std::vector<point>& p, std::vector<int> &ip); // Get a hull
 
 int ccw (point p0, point p1, point p2);
 double dist (point p1, point p2);

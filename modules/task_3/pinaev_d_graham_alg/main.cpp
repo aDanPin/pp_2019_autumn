@@ -76,11 +76,37 @@ TEST(Core_Functionality, Sort) {
         ASSERT_EQ(points[4].index, p24.index);
     }
 }
-//
-//TEST(Core_Functionality, Result) {
-//    ASSERT_EQ(0.0, ans);
-//}
-//
+
+TEST(Core_Functionality, HullGraham) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // FIXME: check accuracy  
+    if (rank == 0) {
+        std::vector<point> points(0);
+        std::vector<int> indexes(0);
+        point p22 = point(2, 2, 0); // not in hall
+        point p42 = point(4, 2, 1); // 3
+        point p24 = point(2, 4, 2); // 4
+        point pm11 = point(-1, 1, 3); // 1
+        point p1m1 = point(1, -1, 4); // 2
+
+        points.push_back(p22);
+        points.push_back(p42);
+        points.push_back(p24);
+        points.push_back(pm11);
+        points.push_back(p1m1);
+
+        int first_index = LowestPoint(points);
+        Sort(points, first_index);
+        HullGraham(points, indexes);
+
+        ASSERT_EQ(indexes[0], 3);
+        ASSERT_EQ(indexes[1], 4);
+        ASSERT_EQ(indexes[2], 1);
+        ASSERT_EQ(indexes[3], 2);
+    }
+}
+
 //TEST(Core_Functionality, leftTurn) {
 //    ASSERT_EQ(0.0, ans);
 //}

@@ -30,7 +30,6 @@ std::vector<point> getRandomArray(size_t size, int max_X,
 
 
 int LowestPoint(std::vector<point>& points) {
-    // ищем самую нижнюю из самых левых точек - первая точка
     point first = points[0];
     int first_index = 0;
     int n = points.size();
@@ -76,8 +75,8 @@ void HullGraham (std::vector<point>& p, std::vector<int> &ip) {
     double eps = 0.0;
     size_t n = p.size();
     size_t i;
-    for (i = 1; i < n && std::abs(area_triangle (p[0], p[1], p[i])) <= eps; ++ i);
-    ip.push_back (1);
+    for(i = 1; i < n && std::abs(area_triangle(p[0], p[1], p[i])) <= eps; ++ i);
+    ip.push_back(1);
 
     // последовательно добавляем точки в оболочку
     int top = 1; // индекс последней точки в оболочке
@@ -85,14 +84,14 @@ void HullGraham (std::vector<point>& p, std::vector<int> &ip) {
         // если угол больше pi то извлекаем последнюю точку из оболочки
         if (! ccw (p[ip[top - 1]], p[ip[top]], p[i])) {
             -- top;
-            ip.pop_back ();
+            ip.pop_back();
         } else { // иначе кладем ее
             ++ top;
-            ip.push_back (i);
+            ip.push_back(i);
             ++ i;
         }
     }
-    // ??
+
     for (i = 0; i < ip.size(); ++ i)
         ip[i] = p[ip[i]].index;
 }
