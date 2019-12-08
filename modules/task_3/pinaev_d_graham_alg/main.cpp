@@ -5,54 +5,77 @@
 #include "./graham.h"
 
 const double PI = 3.1415;
-//
-//TEST(Core_Functionality, Lowest_point) {
-//    int rank;
-//    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-//
-//    if (rank == 0) {
-//        // (0, 100) (100, 0) (5, 5) (63, -10) (-10, 0) (0, 0)
-//        // lowest - is 4
-//        std::vector<point> points;
-//        points.push_back(point(0, 100));
-//        points.push_back(point(100, 0));
-//        points.push_back(point(5, 5));
-//        points.push_back(point(63, -100));
-//        points.push_back(point(-10, 0));
-//        points.push_back(point(0, 0));
-//
-//        int ans = Lowest_point(points);
-//
-//        ASSERT_EQ(ans, 3);
-//    }
-//}
 
-//TEST(Core_Functionality, Get_Angles) {
-//    int rank;
-//    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-//    // FIXME: check accuracy  
-//    if (rank == 0) {
-//        std::vector<double> ang;
-//        std::vector<point> points;
-//        points.push_back(point(-1, 0));
-//        points.push_back(point(3, -4));
-//        points.push_back(point(2, -3));
-//        points.push_back(point(1, -2));
-//
-//        //int ans = Lowest_point(points);
-//        //ASSERT_EQ(ans, 0);
-//
-//        Get_Angles(ang, points);
-//        ASSERT_NEAR(135.003, ang[0], 0.001);
-//        ASSERT_NEAR(0.0, ang[1], 0.001);
-//        ASSERT_NEAR(135.003, ang[2], 0.001);
-//        ASSERT_NEAR(135.003, ang[3], 0.001);
-//    }
-//}
+TEST(Core_Functionality, Lowest_point) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-//TEST(Core_Functionality, Sort) {
-//    ASSERT_EQ(0.0, ans);
-//}
+    if (rank == 0) {
+        // (0, 100) (100, 0) (5, 5) (63, -10) (-10, 0) (0, 0)
+        // lowest - is 3
+        std::vector<point> points(0);
+        points.emplace_back(point(1000, 100));
+        points.emplace_back(point(100, 0));
+        points.emplace_back(point(5, 5));
+        points.emplace_back(point(63, -100));
+        points.emplace_back(point(-1000, 0));
+        points.emplace_back(point(0, 0));
+
+        int ans = LowestPoint(points);
+
+        ASSERT_EQ(ans, 4);
+    }
+}
+
+TEST(Core_Functionality, ccw) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // FIXME: check accuracy  
+    if (rank == 0) {
+        std::vector<double> ang;
+        std::vector<point> points;
+        point p22 = point(2, 2);
+        point p42 = point(4, 2);
+        point p24 = point(2, 4);
+        point pm11 = point(-1, 1);
+        point p1m1 = point(1, -1);
+
+        ASSERT_EQ(ccw(p22, p24, p42), 0);
+        ASSERT_EQ(ccw(p22, p42, p24), 1);
+        ASSERT_EQ(ccw(p22, pm11, p1m1), 1);
+        ASSERT_EQ(ccw(p22, p1m1, pm11), 0);
+    }
+}
+
+TEST(Core_Functionality, Sort) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // FIXME: check accuracy  
+    if (rank == 0) {
+        std::vector<point> points(0);
+
+        point p22 = point(2, 2, 0);
+        point p42 = point(4, 2, 1);
+        point p24 = point(2, 4, 2);
+        point pm11 = point(-1, 1, 3);
+        point p1m1 = point(1, -1, 4);
+
+        points.push_back(p22);
+        points.push_back(p42);
+        points.push_back(p24);
+        points.push_back(pm11);
+        points.push_back(p1m1);
+
+        int first_index = LowestPoint(points);
+        Sort(points, first_index);
+
+        ASSERT_EQ(points[0].index, pm11.index);
+        ASSERT_EQ(points[1].index, p1m1.index);
+        ASSERT_EQ(points[2].index, p42.index);
+        ASSERT_EQ(points[3].index, p22.index);
+        ASSERT_EQ(points[4].index, p24.index);
+    }
+}
 //
 //TEST(Core_Functionality, Result) {
 //    ASSERT_EQ(0.0, ans);
