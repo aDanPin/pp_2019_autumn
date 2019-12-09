@@ -105,37 +105,6 @@ TEST(Core_Functionality, Merge) {
     }
 }
 
-TEST(Core_Functionality, HullGraham) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    if (rank == 0) {
-        std::vector<point> points(0);
-        std::vector<int> indexes(0);
-        point p22 = point(2, 2); // not in hall
-        point p42 = point(4, 2); // 3
-        point p24 = point(2, 4); // 4
-        point pm11 = point(-1, 1); // 1
-        point p1m1 = point(1, -1); // 2
-
-        points.push_back(p22);
-        points.push_back(p42);
-        points.push_back(p24);
-        points.push_back(pm11);
-        points.push_back(p1m1);
-
-        int first_index = LowestPoint(points);
-        std::swap(points[0], points[first_index]);
-        Sort(points, points[0]);
-        HullGraham(points, indexes);
-
-        ASSERT_EQ(indexes[0], 0);
-        ASSERT_EQ(indexes[1], 1);
-        ASSERT_EQ(indexes[2], 3);
-        ASSERT_EQ(indexes[3], 4);
-    }
-}
-
 TEST(GrahamAlg, isConvexHull) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -162,6 +131,43 @@ TEST(GrahamAlg, isConvexHull) {
         // Not convex hull - {3, 4, 1, 0, 2}
         std::vector<int>notConvHull = {3, 4, 1, 0, 2};
         ASSERT_FALSE(isConvexHull(points, notConvHull));
+    }
+}
+
+TEST(Core_Functionality, HullGraham) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+        std::vector<point> points(0);
+        std::vector<int> indexes(0);
+        point p22 = point(2, 2); // not in hall
+        point p42 = point(4, 2); // 3
+        point p24 = point(2, 4); // 4
+        point pm11 = point(-1, 1); // 1
+        point p1m1 = point(1, -1); // 2
+
+        points.push_back(p22);
+        points.push_back(p42);
+        points.push_back(p24);
+        points.push_back(pm11);
+        points.push_back(p1m1);
+
+        int first_index = LowestPoint(points);
+        Sort(points, first_index);
+        HullGraham(points, indexes);
+
+        std::cout<<"Indexes"<<std::endl;
+        
+        std::cout<<indexes[0]<<std::endl;
+        std::cout<<indexes[1]<<std::endl;
+        std::cout<<indexes[2]<<std::endl;
+        std::cout<<indexes[3]<<std::endl;
+
+        ASSERT_EQ(indexes[0], 0);
+        ASSERT_EQ(indexes[1], 1);
+        ASSERT_EQ(indexes[2], 2);
+        ASSERT_EQ(indexes[3], 4);
     }
 }
 
@@ -197,26 +203,30 @@ TEST(GrahamAlg, getConvexHull_Random_Points) {
     if (rank == 0) {
         std::vector<point> points = getRandomArray(100);
         std::vector<int> indexes(0);
-
+        std::cout<<"Start Geraham"<<std::endl;
         getConvexHull(points, indexes);
-
+        std::cout<<"Start Check"<<std::endl;
         ASSERT_TRUE(isConvexHull(points, indexes));
     }
 }
 
-TEST(GrahamAlg, getConvexHullParellel_Random_Points) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    if (rank == 0) {
-        std::vector<point> points = getRandomArray(100);
-        std::vector<int> indexes(0);
-
-        getConvexHullParellel(points, indexes);
-
-        ASSERT_TRUE(isConvexHull(points, indexes));
-    }
-}
+//TEST(GrahamAlg, getConvexHullParellel_Random_Points) {
+//    int rank;
+//    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//
+//    std::vector<point> points(0);
+//    std::vector<int> indexes(0);
+//
+//    if (rank == 0) {
+//        points = getRandomArray(100);
+//    }
+//
+//    getConvexHullParellel(points, indexes);
+//
+//    if (rank == 0) {
+//        ASSERT_TRUE(isConvexHull(points, indexes));
+//    }
+//}
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

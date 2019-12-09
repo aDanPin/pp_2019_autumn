@@ -19,15 +19,14 @@ std::vector<point> getRandomArray(size_t size, int max_X,
     // FIXME: resize vector
     std::vector<point> points(size);
     int x, y;
-    for(size_t i = 0; i < size; ++i) {
+    for(size_t i = 0; i < points.size(); ++i) {
         x = gen() % max_X;
         y = gen() % max_Y;
-        points.push_back(point(x, y));
+        points[i] = point(x, y);
     }
 
     return points;
 }
-
 
 int LowestPoint(std::vector<point>& points) {
     point first = points[0];
@@ -48,7 +47,7 @@ double area_triangle (point a, point b, point c) {
 
 // ccw - против часововй стрелки
 int ccw (point p0, point p1, point p2) {
-    return area_triangle(p0, p1, p2) > 0;
+    return area_triangle(p0, p1, p2) >= 0;
 }
 
 double dist (point p1, point p2) {
@@ -56,15 +55,18 @@ double dist (point p1, point p2) {
                         + ((p1.x - p2.x) * (p1.x - p2.x)));
 }
 
-void Sort(std::vector<point>& p, point first_point) {
-    std::sort (p.begin(), p.end()
+void Sort(std::vector<point>& p, size_t first_index) {
+    point first_point = p[first_index];
+    std::swap(p[0], p[first_index]);
+    std::sort (p.begin() + 1, p.end()
     , [&](const point& a, const point& b){
-        //if (a.index == first.index) return true;
-        //if (b.index == first.index) return false;
         if (ccw (first_point, a, b)) return true;
         if (ccw (first_point, b, a)) return false;
         return dist (first_point, a) > dist (first_point, b);
     });
+    //std::cout<<"Sorted"<<std::endl;
+    //for(size_t i = 0; i < p.size(); ++i)
+    //    std::cout<<p[i].x<<' '<<p[i].y<<std::endl;  
 }
 
 std::vector<point> Merge(std::vector<point>& src1, std::vector<point> src2
@@ -106,7 +108,7 @@ std::vector<point> Merge(std::vector<point>& src1, std::vector<point> src2
     return dest;
 }
 
-std::vector<point> ParallelSort(std::vector<point>& points, point first_point) {
+std::vector<point> ParallelSort(std::vector<point>& points, size_t first_index) {
     int size, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -119,86 +121,48 @@ std::vector<point> ParallelSort(std::vector<point>& points, point first_point) {
     int res = points.size() % size;
     std::vector<point> dest;
 
-    if (rank == 0) {
-        dest.resize(n + res);
-    } else {
-        dest.resize(n);
-    }
+    dest.resize(n);
 
-    MPI_Scatter(points.data(), n, MPI_Point, dest.data(), n, MPI_Point, 0, MPI_COMM_WORLD);
+    MPI_Scatter(points.data() + res, n, MPI_Point, dest.data(), n, MPI_Point, 0, MPI_COMM_WORLD);
 
-    if (rank == 0) {
-        int a = size - res;
-        for (int i = n; i < n + res; ++i) {
-            dest[i] = points[a];
-            ++a;
+    point first_point = points[first_index];
+    Sort(dest, first_index);
+
+    int s = size, n_op = 1;
+    while (s > 1)
+    {
+        s = s/2 + s%2;
+        if ((rank-n_op)%(2*n_op) == 0)
+        {
+            // n - это количество пришедших элементов
+            MPI_Send (&n, 1, MPI_INT,
+                rank - n_op, 0, MPI_COMM_WORLD);
+            // х - это оригинальный массив
+            MPI_Send(dest.data(), n, MPI_Point,
+                rank - n_op, 0, MPI_COMM_WORLD);
         }
-        Sort(dest, first_point);
-    } else {
-        Sort(dest, first_point);
-    }
-
-    int locsize = size;
-    int i = 0;
-    int partner;
-    while (locsize > 1) {
-        if (locsize % 2 == 0) {
-            if (rank % static_cast<int>(pow(2.0, i + 1)) != 0) {
-                partner = rank - static_cast<int>(pow(2.0, i));
-                MPI_Send(dest.data(), n*static_cast<int>(pow(2.0, i)),
-                        MPI_Point, partner, 0, MPI_COMM_WORLD);
-                return std::vector<point>(0);
-            } else {
-                std::vector<point> tmp(n*static_cast<int>(pow(2.0, i)));
-                partner = rank + static_cast<int>(pow(2.0, i));
-                MPI_Status status;
-                MPI_Recv(tmp.data(), n*static_cast<int>(pow(2.0, i))
-                         , MPI_Point, partner, 0, MPI_COMM_WORLD, &status);
-                if (rank == 0) {
-                    dest = Merge(dest, tmp, dest.size(), n*static_cast<int>(pow(2.0, i))
-                                , first_point);
-                } else {
-                    dest = Merge(dest, tmp, n*static_cast<int>(pow(2.0, i))
-                                , n*static_cast<int>(pow(2.0, i))
-                                , first_point);
-                }
-            }
-        } else {
-            if ((rank % static_cast<int>(pow(2.0, i + 1)) != 0) && (rank != (locsize - 1)*static_cast<int>(pow(2.0, i)))) {
-                partner = rank - static_cast<int>(pow(2.0, i));
-                MPI_Send(dest.data(), n*static_cast<int>(pow(2.0, i)),
-                    MPI_Point, partner, 0, MPI_COMM_WORLD);
-                return std::vector<point>(0);
-            } else if (rank == (locsize - 1)*static_cast<int>(pow(2.0, i))) {
-                MPI_Send(dest.data(), n*static_cast<int>(pow(2.0, i)),
-                    MPI_Point, 0, 0, MPI_COMM_WORLD);
-                return std::vector<point>(0);
-            } else {
-                if (rank == 0) {
-                    std::vector<point> tmp(n*static_cast<int>(pow(2.0, i)));
-                    partner = (locsize - 1)*static_cast<int>(pow(2.0, i));
-                    MPI_Status status;
-                    MPI_Recv(tmp.data(), n*static_cast<int>(pow(2.0, i))
-                            , MPI_Point, partner, 0, MPI_COMM_WORLD, &status);
-                    dest = Merge(dest, tmp, dest.size(), n*static_cast<int>(pow(2.0, i))
-                                , first_point);
-                }
-                std::vector<point> tmp(n*static_cast<int>(pow(2.0, i)));
-                partner = rank + static_cast<int>(pow(2.0, i));
-                MPI_Status status;
-                MPI_Recv(tmp.data(), n*static_cast<int>(pow(2.0, i))
-                        , MPI_Point, partner, 0, MPI_COMM_WORLD, &status);
-                if (rank == 0) {
-                    dest = Merge(dest, tmp, dest.size(), n*static_cast<int>(pow(2.0, i))
-                                , first_point);
-                } else {
-                    dest = Merge(dest, tmp, n*static_cast<int>(pow(2.0, i))
-                                , n*static_cast<int>(pow(2.0, i)), first_point);
-                }
-            }
+        if ((rank%(2*n_op) == 0) && (size - rank > n_op))
+        {
+            MPI_Status status;
+            int n1;
+            MPI_Recv (&n1, 1, MPI_INT,
+                rank+n_op, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            std::vector<point> loc_dest(n1);
+            MPI_Recv (loc_dest.data(), n1, MPI_Point,
+                rank+n_op, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            //for (int i = 0; i < n; i++)
+            //    loc_dest[i+n1] = dest[i];
+            // bonde - пртосто функция слияния
+            dest = Merge(loc_dest, dest
+                         , loc_dest.size(), dest.size()
+                         , first_point);
+            //bond(y, 0, n1-1, n+n1-1);
+            //x = new double [n1 + n];
+            //for (int i = 0; i < n+n1; i++)
+            //    x[i] = y[i];
+            n = n + n1;
         }
-        locsize /= 2;
-        ++i;
+        n_op*=2;
     }
 
     MPI_Type_free(&MPI_Point);
@@ -207,55 +171,65 @@ std::vector<point> ParallelSort(std::vector<point>& points, point first_point) {
 }
 
 void HullGraham (std::vector<point>& p, std::vector<int> &ip) {
+    std::cout<<"1"<<std::endl;
     // первая точка оболочки
-    ip.push_back(0);
+    ip.resize(p.size());
+    int* ip_data = ip.data();
+    ip_data[0] = 0;
     // ищем вторую точку оболочки
     double eps = 0.0;
     size_t n = p.size();
     size_t i;
-    for(i = 1; i < n && std::abs(area_triangle(p[0], p[1], p[i])) <= eps; ++ i);
-    ip.push_back(1);
+    std::cout<<"2"<<std::endl;
+
+    for(i = 1; i < n && std::abs(area_triangle(p[0], p[1], p[i])) <= eps; ++i);
+    ip_data[1] = 1;
 
     // последовательно добавляем точки в оболочку
-    int top = 1; // индекс последней точки в оболочке
+    size_t top = 1; // индекс последней точки в оболочке
+    std::cout<<"3"<<std::endl;
     while (i < n) {
         // если угол больше pi то извлекаем последнюю точку из оболочки
-        if (! ccw (p[ip[top - 1]], p[ip[top]], p[i])) {
+        //std::cout<<"i = "<< i <<std::endl;
+        if (! ccw(p[ip[top - 1]], p[ip[top]], p[i])) {
+            //std::cout<<"top = "<< top <<" pop. ip.size() = "<<ip.size()<<std::endl;
             -- top;
-            ip.pop_back();
+            //ip.pop_back();
         } else { // иначе кладем ее
+            //std::cout<<"top = "<< top <<" push. ip.size() = "<<ip.size()<<std::endl;
             ++ top;
-            ip.push_back(i);
+            ip[top] = i;
             ++ i;
         }
     }
-
-//    for (i = 0; i < ip.size(); ++ i)
-//        ip[i] = p[ip[i]].index;
+    std::cout<<"4"<<std::endl;
+    
 }
 
 bool isConvexHull(std::vector<point>& p, std::vector<int> &ip) {
     if(ip.size() < 3)
-        return false;
+        return true;
 
-    bool flag = true;
     for(size_t i = 2; i < ip.size(); ++i)
-        if(ccw(p[ip[i]], p[ip[i-1]], p[ip[i-2]])){
-            flag = false;
-            break;
+        if(!ccw(p[ip[i-2]], p[ip[i-1]], p[ip[i]])){
+            std::cout<<"Bad points:"<<std::endl;
+            std::cout<<p[ip[i-2]].x<<' '<<p[ip[i-2]].y<<std::endl;
+            std::cout<<p[ip[i-1]].x<<' '<<p[ip[i-1]].y<<std::endl;
+            std::cout<<p[ip[i]].x<<' '<<p[ip[i]].y<<std::endl;
+            return false;
         }
 
-    return flag;
+    return true;
 }
 
 void getConvexHull(std::vector<point>& p, std::vector<int> &ip) {
     int first_index = LowestPoint(p);
-    Sort(p, p[first_index]);
+    Sort(p, first_index);
     HullGraham(p, ip);
 }
 
 void getConvexHullParellel(std::vector<point>& p, std::vector<int> &ip) {
-    int first_index = LowestPoint(p);
-    p = ParallelSort(p, p[first_index]);
+    size_t first_index = LowestPoint(p);
+    p = ParallelSort(p, first_index);
     HullGraham(p, ip);
 }

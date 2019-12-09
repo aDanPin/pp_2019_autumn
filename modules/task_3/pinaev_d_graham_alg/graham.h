@@ -21,8 +21,8 @@ struct point{
 
 bool Greater(point a, point b); // point b greater point a
 int LowestPoint(std::vector<point>& points); // find lowest point
-void Sort(std::vector<point>& p, point first_index); // sort points
-std::vector<point> ParallelSort(std::vector<point>& p, int first_index); //parallel sort points
+void Sort(std::vector<point>& p, size_t first_index); // sort points
+std::vector<point> ParallelSort(std::vector<point>& p, size_t first_index); //parallel sort points
 void HullGraham (std::vector<point>& p, std::vector<int> &ip); // Get a hull
 std::vector<point> Merge(std::vector<point>& src1, std::vector<point> src2
                          , int first, int second
