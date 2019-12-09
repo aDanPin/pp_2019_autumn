@@ -112,7 +112,7 @@ std::vector<point> ParallelSort(std::vector<point>& points, point first_point) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     MPI_Datatype MPI_Point;
-    MPI_Type_contiguous(2, MPI_Point, &MPI_Point);
+    MPI_Type_contiguous(2, MPI_DOUBLE, &MPI_Point);
     MPI_Type_commit(&MPI_Point);
 
     int n = points.size() / size;
@@ -147,7 +147,7 @@ std::vector<point> ParallelSort(std::vector<point>& points, point first_point) {
                 partner = rank - static_cast<int>(pow(2.0, i));
                 MPI_Send(dest.data(), n*static_cast<int>(pow(2.0, i)),
                         MPI_Point, partner, 0, MPI_COMM_WORLD);
-                //return std::vector<point>(0);
+                return std::vector<point>(0);
             } else {
                 std::vector<point> tmp(n*static_cast<int>(pow(2.0, i)));
                 partner = rank + static_cast<int>(pow(2.0, i));
@@ -168,11 +168,11 @@ std::vector<point> ParallelSort(std::vector<point>& points, point first_point) {
                 partner = rank - static_cast<int>(pow(2.0, i));
                 MPI_Send(dest.data(), n*static_cast<int>(pow(2.0, i)),
                     MPI_Point, partner, 0, MPI_COMM_WORLD);
-                //return std::vector<point>(0);
+                return std::vector<point>(0);
             } else if (rank == (locsize - 1)*static_cast<int>(pow(2.0, i))) {
                 MPI_Send(dest.data(), n*static_cast<int>(pow(2.0, i)),
                     MPI_Point, 0, 0, MPI_COMM_WORLD);
-                //return std::vector<point>(0);
+                return std::vector<point>(0);
             } else {
                 if (rank == 0) {
                     std::vector<point> tmp(n*static_cast<int>(pow(2.0, i)));

@@ -195,7 +195,7 @@ TEST(GrahamAlg, getConvexHull_Random_Points) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (rank == 0) {
-        std::vector<point> points = getRandomArray(10000);
+        std::vector<point> points = getRandomArray(100);
         std::vector<int> indexes(0);
 
         getConvexHull(points, indexes);
@@ -209,7 +209,7 @@ TEST(GrahamAlg, getConvexHullParellel_Random_Points) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (rank == 0) {
-        std::vector<point> points = getRandomArray(10000);
+        std::vector<point> points = getRandomArray(100);
         std::vector<int> indexes(0);
 
         getConvexHullParellel(points, indexes);
