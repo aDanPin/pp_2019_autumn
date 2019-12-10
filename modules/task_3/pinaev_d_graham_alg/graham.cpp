@@ -11,21 +11,20 @@
 const double PI = 3.1415;
 static int offset = 0;
 
-std::vector<point> getRandomArray(size_t size, int max_X,
-                                               int max_Y) {
+void getRandomArray(size_t size, std::vector<point>& vec
+                                            , int max_X
+                                            , int max_Y) {
+    vec.resize(size);
     std::mt19937 gen;
     gen.seed((unsigned)time(0) + ++offset);
 
     // FIXME: resize vector
-    std::vector<point> points(size);
     int x, y;
-    for(size_t i = 0; i < points.size(); ++i) {
+    for(size_t i = 0; i < vec.size(); ++i) {
         x = gen() % max_X;
         y = gen() % max_Y;
-        points[i] = point(x, y);
+        vec[i] = point(x, y);
     }
-
-    return points;
 }
 
 int LowestPoint(std::vector<point>& points) {
@@ -47,7 +46,7 @@ double area_triangle (point a, point b, point c) {
 
 // ccw - против часововй стрелки
 int ccw (point p0, point p1, point p2) {
-    return area_triangle(p0, p1, p2) >= 0;
+    return area_triangle(p0, p1, p2) > 0;
 }
 
 double dist (point p1, point p2) {
@@ -58,6 +57,18 @@ double dist (point p1, point p2) {
 void Sort(std::vector<point>& p, size_t first_index) {
     point first_point = p[first_index];
     std::swap(p[0], p[first_index]);
+    std::sort (p.begin() + 1, p.end()
+    , [&](const point& a, const point& b){
+        if (ccw (first_point, a, b)) return true;
+        if (ccw (first_point, b, a)) return false;
+        return dist (first_point, a) > dist (first_point, b);
+    });
+    //std::cout<<"Sorted"<<std::endl;
+    //for(size_t i = 0; i < p.size(); ++i)
+    //    std::cout<<p[i].x<<' '<<p[i].y<<std::endl;  
+}
+
+void Sort(std::vector<point>& p, point first_point) {
     std::sort (p.begin() + 1, p.end()
     , [&](const point& a, const point& b){
         if (ccw (first_point, a, b)) return true;
@@ -108,7 +119,7 @@ std::vector<point> Merge(std::vector<point>& src1, std::vector<point> src2
     return dest;
 }
 
-std::vector<point> ParallelSort(std::vector<point>& points, size_t first_index) {
+void ParallelSort(std::vector<point>& points, size_t first_index) {
     int size, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -117,16 +128,27 @@ std::vector<point> ParallelSort(std::vector<point>& points, size_t first_index) 
     MPI_Type_contiguous(2, MPI_DOUBLE, &MPI_Point);
     MPI_Type_commit(&MPI_Point);
 
-    int n = points.size() / size;
-    int res = points.size() % size;
-    std::vector<point> dest;
+    int n;
+    int res;
+    if(rank == 0) {
+        n = points.size() / size;
+        res = points.size() % size;
+    }
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    point first_point;
+    if (rank == 0) {
+        first_point = points[first_index];
+        std::swap(points[0], points[first_index]);
+    }
+    MPI_Bcast(&first_point, 1, MPI_Point, 0, MPI_COMM_WORLD);
 
+    std::vector<point> dest;
     dest.resize(n);
 
     MPI_Scatter(points.data() + res, n, MPI_Point, dest.data(), n, MPI_Point, 0, MPI_COMM_WORLD);
 
-    point first_point = points[first_index];
-    Sort(dest, first_index);
+    Sort(dest, first_point);
 
     int s = size, n_op = 1;
     while (s > 1)
@@ -167,43 +189,35 @@ std::vector<point> ParallelSort(std::vector<point>& points, size_t first_index) 
 
     MPI_Type_free(&MPI_Point);
 
-    return dest;
+    if (rank == 0){
+        points = Merge(dest, points, n, res, first_point);
+    }
 }
 
 void HullGraham (std::vector<point>& p, std::vector<int> &ip) {
     std::cout<<"1"<<std::endl;
-    // первая точка оболочки
     ip.resize(p.size());
     int* ip_data = ip.data();
     ip_data[0] = 0;
-    // ищем вторую точку оболочки
-    double eps = 0.0;
-    size_t n = p.size();
-    size_t i;
     std::cout<<"2"<<std::endl;
 
-    for(i = 1; i < n && std::abs(area_triangle(p[0], p[1], p[i])) <= eps; ++i);
     ip_data[1] = 1;
 
-    // последовательно добавляем точки в оболочку
-    size_t top = 1; // индекс последней точки в оболочке
+    size_t top = 1;
     std::cout<<"3"<<std::endl;
+    size_t i = 2;
+    size_t n = p.size();
     while (i < n) {
-        // если угол больше pi то извлекаем последнюю точку из оболочки
-        //std::cout<<"i = "<< i <<std::endl;
         if (! ccw(p[ip[top - 1]], p[ip[top]], p[i])) {
-            //std::cout<<"top = "<< top <<" pop. ip.size() = "<<ip.size()<<std::endl;
             -- top;
-            //ip.pop_back();
-        } else { // иначе кладем ее
-            //std::cout<<"top = "<< top <<" push. ip.size() = "<<ip.size()<<std::endl;
+        } else {
             ++ top;
             ip[top] = i;
             ++ i;
         }
     }
     std::cout<<"4"<<std::endl;
-    
+    ip.resize(top);
 }
 
 bool isConvexHull(std::vector<point>& p, std::vector<int> &ip) {
@@ -222,14 +236,34 @@ bool isConvexHull(std::vector<point>& p, std::vector<int> &ip) {
     return true;
 }
 
+bool isSorted(std::vector<point>& p) {
+    if(p.size() < 3)
+        return true;
+
+    for(size_t i = 2; i < p.size(); ++i)
+        if(!ccw(p[0], p[i], p[i-1])) {
+            std::cout<<"On Index "<<i<<std::endl;
+            
+            std::cout<<"Bad points"<<std::endl;
+            std::cout<<p[0].x<<' '<<p[0].y<<std::endl;
+            std::cout<<p[i].x<<' '<<p[i].y<<std::endl;
+            std::cout<<p[i - 1].x<<' '<<p[i - 1].y<<std::endl;
+            std::cout<<area_triangle(p[0], p[i], p[i-1])<<std::endl;
+            
+            return false;
+        }
+            
+    return true;
+}
+
 void getConvexHull(std::vector<point>& p, std::vector<int> &ip) {
     int first_index = LowestPoint(p);
     Sort(p, first_index);
     HullGraham(p, ip);
 }
 
-void getConvexHullParellel(std::vector<point>& p, std::vector<int> &ip) {
-    size_t first_index = LowestPoint(p);
-    p = ParallelSort(p, first_index);
-    HullGraham(p, ip);
-}
+//void getConvexHullParellel(std::vector<point>& p, std::vector<int> &ip) {
+//    size_t first_index = LowestPoint(p);
+//    ParallelSort(p, first_index);
+//    HullGraham(p, ip);
+//}
