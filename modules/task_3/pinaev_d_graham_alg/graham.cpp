@@ -46,7 +46,7 @@ double area_triangle (point a, point b, point c) {
 
 // ccw - против часововй стрелки
 int ccw (point p0, point p1, point p2) {
-    return area_triangle(p0, p1, p2) > 0;
+    return area_triangle(p0, p1, p2) >= 0;
 }
 
 double dist (point p1, point p2) {
@@ -95,7 +95,7 @@ std::vector<point> Merge(std::vector<point>& src1, std::vector<point> src2
 
     int i = 0, j = 0, k = 0;
     while(i < first && j < second) {
-        if(ccw (first_point, src1[i], src2[j])){ // src1 is lowest
+        if(ccw(first_point, src1[i], src2[j])){ // src1 is lowest
             dest[k] = src1[i];
             ++i; ++k;
         } else {

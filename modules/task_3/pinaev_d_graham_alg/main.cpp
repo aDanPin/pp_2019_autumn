@@ -70,7 +70,7 @@ TEST(Core_Functionality, Merge) {
                     , first_point);
 
         for(int i = 0; i < 6; ++i)
-            ASSERT_EQ(dest[i].y, i);
+            EXPECT_EQ(dest[i].y, i);
     }
 }
 
