@@ -56,6 +56,8 @@ TEST(Core_Functionality, Merge) {
         std::vector<point> points2(0);
         std::vector<point> dest(0);
 
+
+        points1.push_back(point(-1, 0));
         points1.push_back(point(0, 0));
         points2.push_back(point(0, 1));
         points2.push_back(point(0, 2));
@@ -63,14 +65,19 @@ TEST(Core_Functionality, Merge) {
         points1.push_back(point(0, 4));
         points2.push_back(point(0, 5));
 
+        ASSERT_TRUE(isSorted(points1));
+        //ASSERT_TRUE(isSorted(dest));
+        
+
         point first_point(-1, 0);
 
         dest = Merge(points1, points2
                     , points1.size(), points2.size()
                     , first_point);
 
-        for(int i = 0; i < 6; ++i)
-            EXPECT_EQ(dest[i].y, i);
+        ASSERT_TRUE(isSorted(dest));
+        for(int i = 1; i < 7; ++i)
+            EXPECT_EQ(dest[i].y, i - 1);
     }
 }
 
@@ -124,6 +131,7 @@ TEST(Core_Functionality, HullGraham) {
 
         int first_index = LowestPoint(points);
         Sort(points, first_index);
+        ASSERT_TRUE(isSorted(points));
         HullGraham(points, indexes);
 
         std::cout<<"Indexes"<<std::endl;
@@ -160,7 +168,7 @@ TEST(GrahamAlg, getConvexHull_Static_Points) {
         points.push_back(p1m1);
 
         getConvexHull(points, indexes);
-
+        ASSERT_TRUE(isSorted(points));
         ASSERT_TRUE(isConvexHull(points, indexes));
     }
 }

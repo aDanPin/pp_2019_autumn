@@ -139,59 +139,44 @@ void ParallelSort(std::vector<point>& points, size_t first_index) {
     point first_point;
     if (rank == 0) {
         first_point = points[first_index];
-        std::swap(points[0], points[first_index]);
+        point tmp = points[0];
+        points[0] = first_point;
+        points[first_index] = tmp;    
     }
     MPI_Bcast(&first_point, 1, MPI_Point, 0, MPI_COMM_WORLD);
 
     std::vector<point> dest;
-    dest.resize(n);
-
+    if(rank == 0){
+        dest.resize(n + res);
+    } else {
+        dest.resize(n);
+    }
+   
     MPI_Scatter(points.data() + res, n, MPI_Point, dest.data(), n, MPI_Point, 0, MPI_COMM_WORLD);
+
+    if(rank == 0){
+        for(int i = 0; i < n + res; ++i)
+            dest[i] = points[i];
+    }
 
     Sort(dest, first_point);
 
-    int s = size, n_op = 1;
-    while (s > 1)
-    {
-        s = s/2 + s%2;
-        if ((rank-n_op)%(2*n_op) == 0)
-        {
-            // n - это количество пришедших элементов
-            MPI_Send (&n, 1, MPI_INT,
-                rank - n_op, 0, MPI_COMM_WORLD);
-            // х - это оригинальный массив
-            MPI_Send(dest.data(), n, MPI_Point,
-                rank - n_op, 0, MPI_COMM_WORLD);
-        }
-        if ((rank%(2*n_op) == 0) && (size - rank > n_op))
-        {
+    if(rank != 0){
+        MPI_Send(dest.data(), n, MPI_Point, 0, rank, MPI_COMM_WORLD);
+    }
+    if(rank == 0){
+        std::vector<point> tmp(n);
+        for(int i = 1; i < size; ++i){
             MPI_Status status;
-            int n1;
-            MPI_Recv (&n1, 1, MPI_INT,
-                rank+n_op, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-            std::vector<point> loc_dest(n1);
-            MPI_Recv (loc_dest.data(), n1, MPI_Point,
-                rank+n_op, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-            //for (int i = 0; i < n; i++)
-            //    loc_dest[i+n1] = dest[i];
-            // bonde - пртосто функция слияния
-            dest = Merge(loc_dest, dest
-                         , loc_dest.size(), dest.size()
-                         , first_point);
-            //bond(y, 0, n1-1, n+n1-1);
-            //x = new double [n1 + n];
-            //for (int i = 0; i < n+n1; i++)
-            //    x[i] = y[i];
-            n = n + n1;
+            MPI_Recv(tmp.data(), n, MPI_Point, MPI_ANY_SOURCE,
+                        MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            dest = Merge(dest, tmp, dest.size(), tmp.size(), first_point);
         }
-        n_op*=2;
+        dest[0] = first_point;
     }
-
-    MPI_Type_free(&MPI_Point);
-
-    if (rank == 0){
-        points = Merge(dest, points, n, res, first_point);
-    }
+    points = dest;
+    
+    //return points;
 }
 
 void HullGraham (std::vector<point>& p, std::vector<int> &ip) {
@@ -241,7 +226,7 @@ bool isSorted(std::vector<point>& p) {
         return true;
 
     for(size_t i = 2; i < p.size(); ++i)
-        if(!ccw(p[0], p[i], p[i-1])) {
+        if(ccw(p[0], p[i], p[i - 1])) {
             std::cout<<"On Index "<<i<<std::endl;
             
             std::cout<<"Bad points"<<std::endl;
@@ -261,9 +246,3 @@ void getConvexHull(std::vector<point>& p, std::vector<int> &ip) {
     Sort(p, first_index);
     HullGraham(p, ip);
 }
-
-//void getConvexHullParellel(std::vector<point>& p, std::vector<int> &ip) {
-//    size_t first_index = LowestPoint(p);
-//    ParallelSort(p, first_index);
-//    HullGraham(p, ip);
-//}
