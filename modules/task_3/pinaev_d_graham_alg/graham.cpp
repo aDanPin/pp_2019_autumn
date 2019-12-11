@@ -80,7 +80,7 @@ void Sort(std::vector<point>& p, point first_point) {
     //    std::cout<<p[i].x<<' '<<p[i].y<<std::endl;  
 }
 
-std::vector<point> Merge(std::vector<point>& src1, std::vector<point> src2
+std::vector<point> Merge(std::vector<point> src1, std::vector<point> src2
           , int first, int second
           , point first_point) {
 

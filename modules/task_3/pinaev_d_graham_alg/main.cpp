@@ -88,27 +88,40 @@ TEST(Core_Functionality, SuperMerge) {
     if (rank == 0) {
         std::vector<point> points1(0);
         std::vector<point> points2(0);
+        std::vector<point> points3(0);
         std::vector<point> dest(0);
 
         point first_point(-1, -1);
 
         getRandomArray(50, points1);
         getRandomArray(50, points2);
+        getRandomArray(50, points3);
+
         points1[0] = first_point;
         //points2[0] = first_point;
         ASSERT_FALSE(isSorted(points1, first_point));
         ASSERT_FALSE(isSorted(points2, first_point));
+        ASSERT_FALSE(isSorted(points3, first_point));
 
         Sort(points1, first_point);
         Sort(points2, first_point);
+        Sort(points3, first_point);
         ASSERT_TRUE(isSorted(points1, first_point));
         ASSERT_TRUE(isSorted(points2, first_point));
+        ASSERT_TRUE(isSorted(points3, first_point));
 
         dest = Merge(points1, points2
                     , points1.size(), points2.size()
                     , first_point);
 
         ASSERT_TRUE(isSorted(dest, first_point));                
+
+        dest = Merge(dest, points3
+                    , dest.size(), points3.size()
+                    , first_point);
+
+        ASSERT_TRUE(isSorted(dest, first_point));                
+
     }
 }
 

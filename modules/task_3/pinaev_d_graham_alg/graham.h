@@ -24,7 +24,7 @@ int LowestPoint(std::vector<point>& points); // find lowest point
 void Sort(std::vector<point>& p, point first_point); // sort points
 void ParallelSort(std::vector<point>& p, point first_point); //parallel sort points
 void HullGraham (std::vector<point>& p, std::vector<int> &ip); // Get a hull
-std::vector<point> Merge(std::vector<point>& src1, std::vector<point> src2
+std::vector<point> Merge(std::vector<point> src1, std::vector<point> src2
                          , int first, int second
                          , point first_point);
 
