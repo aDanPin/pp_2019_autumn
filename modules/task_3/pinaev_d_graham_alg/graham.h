@@ -21,9 +21,9 @@ struct point{
 
 bool Greater(point a, point b); // point b greater point a
 int LowestPoint(std::vector<point>& points); // find lowest point
-void Sort(std::vector<point>& p, point first_point); // sort points
-void ParallelSort(std::vector<point>& p, point first_point); //parallel sort points
-void HullGraham (std::vector<point>& p, std::vector<int> &ip); // Get a hull
+std::vector<point> Sort(std::vector<point>& p, point first_point); // sort points
+std::vector<point> ParallelSort(std::vector<point>& p, point first_point); //parallel sort points
+void HullGraham (std::vector<point> p, std::vector<int> &ip); // Get a hull
 std::vector<point> Merge(std::vector<point> src1, std::vector<point> src2
                          , int first, int second
                          , point first_point);
@@ -38,6 +38,6 @@ void getRandomArray(size_t size, std::vector<point>& vec
 void getConvexHull(std::vector<point>& p, std::vector<int> &ip);
 void getConvexHullParellel(std::vector<point>& p, std::vector<int> &ip);
 bool isConvexHull(std::vector<point>& p, std::vector<int> &ip);
-bool isSorted(std::vector<point>& p, point first_point);
+bool isSorted(std::vector<point> p, point first_point);
 
 #endif  // MODULES_TASK_3_PINAEV_D_GRAHAM_ALG_H_
