@@ -65,7 +65,7 @@ TEST(Core_Functionality, Merge) {
         points1.push_back(point(0, 4));
         points2.push_back(point(0, 5));
 
-        ASSERT_TRUE(isSorted(points1));
+        //ASSERT_TRUE(isSorted(points1));
         //ASSERT_TRUE(isSorted(dest));
         
 
@@ -75,9 +75,40 @@ TEST(Core_Functionality, Merge) {
                     , points1.size(), points2.size()
                     , first_point);
 
-        ASSERT_TRUE(isSorted(dest));
+        //ASSERT_TRUE(isSorted(dest));
         for(int i = 1; i < 7; ++i)
             EXPECT_EQ(dest[i].y, i - 1);
+    }
+}
+
+TEST(Core_Functionality, SuperMerge) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+        std::vector<point> points1(0);
+        std::vector<point> points2(0);
+        std::vector<point> dest(0);
+
+        point first_point(-1, -1);
+
+        getRandomArray(50, points1);
+        getRandomArray(50, points2);
+        points1[0] = first_point;
+        //points2[0] = first_point;
+        ASSERT_FALSE(isSorted(points1, first_point));
+        ASSERT_FALSE(isSorted(points2, first_point));
+
+        Sort(points1, first_point);
+        Sort(points2, first_point);
+        ASSERT_TRUE(isSorted(points1, first_point));
+        ASSERT_TRUE(isSorted(points2, first_point));
+
+        dest = Merge(points1, points2
+                    , points1.size(), points2.size()
+                    , first_point);
+
+        ASSERT_TRUE(isSorted(dest, first_point));                
     }
 }
 
@@ -130,8 +161,13 @@ TEST(Core_Functionality, HullGraham) {
         points.push_back(p1m1);
 
         int first_index = LowestPoint(points);
-        Sort(points, first_index);
-        ASSERT_TRUE(isSorted(points));
+        point first_point = points[first_index];
+        point tmp = points[0];
+        points[first_index] = tmp;
+        points[0] = first_point;
+        
+        Sort(points, first_point);
+        //ASSERT_TRUE(isSorted(points));
         HullGraham(points, indexes);
 
         std::cout<<"Indexes"<<std::endl;
@@ -168,7 +204,7 @@ TEST(GrahamAlg, getConvexHull_Static_Points) {
         points.push_back(p1m1);
 
         getConvexHull(points, indexes);
-        ASSERT_TRUE(isSorted(points));
+        //ASSERT_TRUE(isSorted(points));
         ASSERT_TRUE(isConvexHull(points, indexes));
     }
 }
@@ -198,20 +234,25 @@ TEST(GrahamAlg, getConvexHullParellel_Random_Points) {
     int in_p_size, out_p_size;
 
     size_t first_index;
+    point first_point;
     if (rank == 0) {
         getRandomArray(125, points);
         in_p_size = points.size();
         first_index = LowestPoint(points);
+        point first_point = points[first_index];
+        point tmp = points[0];
+        points[first_index] = tmp;
+        points[0] = first_point;
     }
 
     //first_index++;
-    ParallelSort(points, first_index);
+    ParallelSort(points, first_point);
     
     if (rank == 0) {
         out_p_size = points.size();
         ASSERT_EQ(in_p_size, out_p_size);
 
-        ASSERT_TRUE(isSorted(points));
+        ASSERT_TRUE(isSorted(points, first_point));
         
         HullGraham(points, indexes);
         
