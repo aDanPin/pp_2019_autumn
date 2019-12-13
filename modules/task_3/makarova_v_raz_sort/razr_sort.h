@@ -4,7 +4,6 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
 #include <cstdlib>
 
 std::vector<int> RazrIteration(std::vector<int> src, int raz);

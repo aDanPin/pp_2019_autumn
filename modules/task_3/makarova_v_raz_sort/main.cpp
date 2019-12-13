@@ -1,8 +1,8 @@
 // Copyright 2019 Makarova Viktoria
 #include <gtest-mpi-listener.hpp>
 #include <gtest/gtest.h>
-#include <algorithm>
 #include <random>
+#include <algorithm>
 #include <cassert>
 #include <vector>
 #include "../../../modules/task_3/makarova_v_raz_sort/razr_sort.h"

@@ -93,7 +93,7 @@ bool isSorted(std::vector<int> src) {
 
 std::vector<int> Merge(std::vector<int> src1, std::vector<int> src2) {
       int size1 = src1.size();
-      int size2 = src2.size();  
+      int size2 = src2.size();
       std::vector<int> tmp(size1 + size2);
       int i = 0, j = 0;
       for (int k = 0; k < size1+size2; k++) {
@@ -130,10 +130,21 @@ std::vector<int> ParallSort(std::vector<int> src) {
     length = src.size()/mpi_size;
     rem = src.size() % mpi_size;
   }
-  MPI_Bcast(&length, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&length,
+            1,
+            MPI_INT,
+            0,
+            MPI_COMM_WORLD);
 
   std::vector<int> local_vec(length);
-  MPI_Scatter(&src[0], length, MPI_INT, &local_vec[0], length, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Scatter(&src[0],
+              length,
+              MPI_INT,
+              &local_vec[0],
+              length,
+              MPI_INT,
+              0,
+              MPI_COMM_WORLD);
   if (mpi_rank == 0 && rem != 0) {
       local_vec.insert(local_vec.end(), src.end()-rem, src.end());
   }
@@ -153,12 +164,22 @@ std::vector<int> ParallSort(std::vector<int> src) {
               MPI_Status status1;
               std::vector<int>tmp_vec(num_op_length);
               part = pow2(num_op - 1) * (i - 1);
-              MPI_Recv(&tmp_vec[0], num_op_length, MPI_INT, part, 1, MPI_COMM_WORLD, &status1);
+              MPI_Recv(&tmp_vec[0],
+                       num_op_length,
+                       MPI_INT, part,
+                       1,
+                       MPI_COMM_WORLD,
+                       &status1);
               local_vec = Merge(local_vec, tmp_vec);
               loc_size += num_op_length;
           }
           if (mpi_rank == pow2(num_op - 1) * (i - 1)) {
-              MPI_Send(&local_vec[0], num_op_length, MPI_INT, 0, 1, MPI_COMM_WORLD);
+              MPI_Send(&local_vec[0],
+                       num_op_length,
+                       MPI_INT,
+                       0,
+                       1,
+                       MPI_COMM_WORLD);
               return local_vec;
           }
       }
@@ -167,13 +188,24 @@ std::vector<int> ParallSort(std::vector<int> src) {
           part = mpi_rank + pow2(num_op-1);
           std::vector<int> tmp_vec(num_op_length);
           MPI_Status status3;
-          MPI_Recv(&tmp_vec[0], num_op_length, MPI_INT, part, 3, MPI_COMM_WORLD, &status3);
+          MPI_Recv(&tmp_vec[0],
+                   num_op_length,
+                   MPI_INT,
+                   part,
+                   3,
+                   MPI_COMM_WORLD,
+                   &status3);
           local_vec = Merge(local_vec, tmp_vec);
           loc_size += num_op_length;
       }
       if (mpi_rank % pow2(num_op) != 0) {
           part = mpi_rank - pow2(num_op-1);
-          MPI_Send(&local_vec[0], num_op_length, MPI_INT, part, 3, MPI_COMM_WORLD);
+          MPI_Send(&local_vec[0],
+                   num_op_length,
+                   MPI_INT,
+                   part,
+                   3,
+                   MPI_COMM_WORLD);
           return local_vec;
       }
       num_op++;
