@@ -60,7 +60,6 @@ std::vector<int> RazrIteration(std::vector<int> src, int raz) {
 }
 
 std::vector<int> RazrSort(std::vector<int> src) {
-    int size = src.size();
     std::vector<int> sorted(src);
     for (int i = 0; i < 4; ++i) {
         sorted = RazrIteration(sorted, i);
@@ -120,7 +119,6 @@ std::vector<int> Merge(std::vector<int> src1, std::vector<int> src2) {
 }
 
 std::vector<int> ParallSort(std::vector<int> src) {
-  int size = src.size();
   int mpi_rank, mpi_size;
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
