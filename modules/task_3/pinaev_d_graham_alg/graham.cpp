@@ -130,6 +130,13 @@ std::vector<point> Merge(const std::vector<point>& src1, const std::vector<point
     return dest;
 }
 
+int pow2(int st) {
+  int res = 1;
+  for (int i = 0; i < st; i++)
+    res *= 2;
+  return res;
+}
+
 void ParallelSort(std::vector<point>& points, point first_point) {
     int size, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -139,51 +146,108 @@ void ParallelSort(std::vector<point>& points, point first_point) {
     MPI_Type_contiguous(2, MPI_DOUBLE, &MPI_Point);
     MPI_Type_commit(&MPI_Point);
 
-    int n;
-    //int res;
+/*
+    int length, ost;
     if (rank == 0) {
-        n = points.size() / size;
-    //    res = points.size() % size;
+      length = points.size()/size;
+      ost = points.size() % size;
     }
-    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&length, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // point first_point;
-    // if (rank == 0) {
-    //    first_point = points[first_index];
-    //    point tmp = points[0];
-    //    points[0] = first_point;
-    //    points[first_index] = tmp;
-    // }
-    // MPI_Bcast(&first_point, 1, MPI_Point, 0, MPI_COMM_WORLD);
-
-    std::vector<int>sendcounts(size), displs(size);
-    size_t u_rank = rank;
-    for(int i = 0 ; i < size; i++) {
-        sendcounts[i] = points.size()/size + (u_rank < points.size()%size?1:0);
-        if(i != 0)
-            displs[i] = displs[i-1] + sendcounts[i-1];
+    std::vector<point> local_vec(length);
+    MPI_Scatter(points.data(), length, MPI_Point, local_vec.data(), length, MPI_Point, 0, MPI_COMM_WORLD);
+    
+    if (rank == 0 && ost != 0) {
+        local_vec.insert(local_vec.end(), points.end()-ost, points.end());
     }
-    std::vector<point> dest(sendcounts[rank]);
-    MPI_Scatterv(points.data(), sendcounts.data(), displs.data(), MPI_Point, dest.data(), sendcounts[rank], MPI_Point, 0, MPI_COMM_WORLD);
 
-    Sort(dest, first_point);
+    Sort(local_vec, first_point);
 
     if (rank != 0) {
-        MPI_Send(dest.data(), sendcounts[rank], MPI_Point, 0, rank, MPI_COMM_WORLD);
-    }
-    if (rank == 0) {
-        std::vector<point> tmp(n);
-        for (int i = 1; i < size; ++i) {
+        MPI_Send(local_vec.data(), length, MPI_Point, 0, 1, MPI_COMM_WORLD);
+    } else {
+        for (int proc = 1; proc < size; proc++) {
+            std::vector<point> tmp_vec(length);
+            
             MPI_Status status;
-            MPI_Recv(tmp.data(), sendcounts[i], MPI_Point, MPI_ANY_SOURCE,
-                        MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-            dest = Merge(dest, tmp, first_point);
+            MPI_Recv(tmp_vec.data(), length, MPI_Point, proc, 1, MPI_COMM_WORLD, &status);
+        
+            local_vec = Merge(local_vec, tmp_vec, first_point);
         }
-        dest[0] = first_point;
     }
-    points = dest;
 
-    // return points;
+    points = local_vec;
+
+    MPI_Type_free (&MPI_Point);
+*/
+    int length, ost;
+    if (rank == 0) {
+      length = points.size()/size;
+      ost = points.size() % size;
+    }
+
+    MPI_Bcast(&length, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    std::vector<point>local_vec(length);
+
+    if (rank == 0 && ost != 0) {
+        local_vec.insert(local_vec.end(), points.end()-ost, points.end());
+    }
+
+    int i = size;
+    int iter = 1;
+    int iter_length = length;
+    int partner;
+    int loc_size = length;
+    if (rank == 0)
+    loc_size += ost;
+    while (i > 1) {
+        if (i % 2 == 1) {
+            if (rank == 0) {
+                std::vector<point>neig_vec(iter_length);
+                
+                partner = pow2(iter - 1) * (i - 1);
+                
+                MPI_Status status;
+                MPI_Recv(neig_vec.data(), iter_length, MPI_Point, partner, 0, MPI_COMM_WORLD, &status);
+                
+                local_vec = Merge(local_vec, neig_vec, first_point);
+                
+                loc_size += iter_length;
+            }
+            if (rank == pow2(iter - 1) * (i - 1)) {
+                MPI_Send(local_vec.data(), iter_length, MPI_Point, 0, 0, MPI_COMM_WORLD);
+                
+                break;
+                //return local_vec;// ??
+            }
+        }
+    
+        if (rank % pow2(iter) == 0) {
+            partner = rank + pow2(iter-1);
+            
+            std::vector<point> neig_vec(iter_length);
+            
+            MPI_Status status;
+            MPI_Recv(neig_vec.data(), iter_length, MPI_Point, partner, 1, MPI_COMM_WORLD, &status);
+            
+            local_vec = Merge(local_vec, neig_vec, first_point);
+            
+            loc_size += iter_length;
+        }
+        if (rank % pow2(iter) != 0) {
+            partner = rank - pow2(iter-1);
+            
+            MPI_Send(local_vec.data(), iter_length, MPI_Point, partner, 1, MPI_COMM_WORLD);
+            
+            break;
+            //return local_vec;
+        }
+        iter++;
+        i = i/2;
+        iter_length *= 2;
+    }
+    points = local_vec;
 }
 
 void HullGraham(std::vector<point>& p, std::vector<int> &ip) {
