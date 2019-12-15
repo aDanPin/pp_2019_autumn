@@ -20,9 +20,9 @@ struct point {
 };
 
 int LowestPoint(const std::vector<point>& points);  // find lowest point
-void Sort(std::vector<point>& p, point first_point);  // sort points
-void ParallelSort(std::vector<point>& p, point first_point);  // parallel sort points
-void HullGraham(std::vector<point>& p, std::vector<int> &ip);  // Get a hull
+std::vector<point> Sort(const std::vector<point>& p, point first_point);  // !! // sort points
+std::vector<point> ParallelSort(const std::vector<point>& p, point first_point);  // !! // parallel sort points
+std::vector<int> HullGraham(const std::vector<point>& p);  // !! // Get a hull
 std::vector<point> Merge(const std::vector<point>& src1, const std::vector<point>& src2
                         , point first_point);
 
@@ -30,12 +30,11 @@ int ccw(point p0, point p1, point p2);
 double dist(point p1, point p2);
 double area_triangle(point a, point b, point c);
 
-void getRandomArray(size_t size, std::vector<point>& vec
-                                , int max_X = 100.0
-                                , int max_Y = 100.0);
-void getConvexHull(std::vector<point>& p, std::vector<int> &ip);
-void getConvexHullParellel(std::vector<point>& p, std::vector<int> &ip);
-bool isConvexHull(std::vector<point>& p, std::vector<int> &ip);
-bool isSorted(std::vector<point>& p, point first_point);
+std::vector<point> getRandomArray(size_t size, int max_X = 100.0
+                                             , int max_Y = 100.0);
+std::vector<int> getConvexHull(const std::vector<point>& p);
+// void getConvexHullParellel(const std::vector<point>& p, const std::vector<int> &ip);
+bool isConvexHull(const std::vector<point>& p, const std::vector<int> &ip);
+bool isSorted(const std::vector<point>& p, point first_point);
 
 #endif  // MODULES_TASK_3_PINAEV_D_GRAHAM_ALG_GRAHAM_H_
