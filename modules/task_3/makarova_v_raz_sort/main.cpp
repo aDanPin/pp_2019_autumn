@@ -110,6 +110,7 @@ TEST(Razr_Sort, ParalSort) {
 
     std::vector<int> in;
     std::vector<int> out;
+
     if (rank == 0) {
         std::vector<int> in = GetRandVector(1000);
     }
@@ -119,7 +120,9 @@ TEST(Razr_Sort, ParalSort) {
     if (rank == 0) {
         ASSERT_TRUE(isSorted(out));
     }
+
 }
+
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

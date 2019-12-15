@@ -128,6 +128,7 @@ std::vector<int> ParallSort(std::vector<int> src) {
     length = src.size()/mpi_size;
     rem = src.size() % mpi_size;
   }
+
   MPI_Bcast(&length,
             1,
             MPI_INT,
@@ -135,14 +136,16 @@ std::vector<int> ParallSort(std::vector<int> src) {
             MPI_COMM_WORLD);
 
   std::vector<int> local_vec(length);
-  MPI_Scatter(&src[0],
+
+  MPI_Scatter(src.data(),
               length,
               MPI_INT,
-              &local_vec[0],
+              local_vec.data(),
               length,
               MPI_INT,
               0,
               MPI_COMM_WORLD);
+
   if (mpi_rank == 0 && rem != 0) {
       local_vec.insert(local_vec.end(), src.end()-rem, src.end());
   }
@@ -162,7 +165,7 @@ std::vector<int> ParallSort(std::vector<int> src) {
               MPI_Status status1;
               std::vector<int>tmp_vec(num_op_length);
               part = pow2(num_op - 1) * (i - 1);
-              MPI_Recv(&tmp_vec[0],
+              MPI_Recv(tmp_vec.data(),
                        num_op_length,
                        MPI_INT, part,
                        1,
@@ -172,7 +175,7 @@ std::vector<int> ParallSort(std::vector<int> src) {
               loc_size += num_op_length;
           }
           if (mpi_rank == pow2(num_op - 1) * (i - 1)) {
-              MPI_Send(&local_vec[0],
+              MPI_Send(local_vec.data(),
                        num_op_length,
                        MPI_INT,
                        0,
@@ -186,7 +189,7 @@ std::vector<int> ParallSort(std::vector<int> src) {
           part = mpi_rank + pow2(num_op-1);
           std::vector<int> tmp_vec(num_op_length);
           MPI_Status status3;
-          MPI_Recv(&tmp_vec[0],
+          MPI_Recv(tmp_vec.data(),
                    num_op_length,
                    MPI_INT,
                    part,
@@ -198,7 +201,7 @@ std::vector<int> ParallSort(std::vector<int> src) {
       }
       if (mpi_rank % pow2(num_op) != 0) {
           part = mpi_rank - pow2(num_op-1);
-          MPI_Send(&local_vec[0],
+          MPI_Send(local_vec.data(),
                    num_op_length,
                    MPI_INT,
                    part,
@@ -212,4 +215,5 @@ std::vector<int> ParallSort(std::vector<int> src) {
   }
 
   return local_vec;
+
 }
