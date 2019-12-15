@@ -66,18 +66,10 @@ TEST(Core_Functionality, Merge) {
         points1.push_back(point(0, 4));
         points2.push_back(point(0, 5));
 
-        // ASSERT_TRUE(isSorted(points1));
-        // ASSERT_TRUE(isSorted(dest));
-
-
         point first_point(-1, 0);
 
         dest = Merge(points1, points2, first_point);
-        // for (int i = 0; i < 7; i++) {
-        //     std::cout<<"("<<dest[i].x<<" "<<dest[i].y<<") ";
-        // }
-        // std::cout<<"\n";
-        // ASSERT_TRUE(isSorted(dest));
+
         for (int i = 1; i < 7; ++i)
             EXPECT_EQ(dest[i].y, i - 1);
     }
@@ -94,7 +86,7 @@ TEST(Core_Functionality, SuperMerge) {
 
         std::vector<point> points1 = getRandomArray(50);
         std::vector<point> points2 = getRandomArray(50);
-        
+
         points1[0] = first_point;
         points2[0] = first_point;
         ASSERT_FALSE(isSorted(points1, first_point));
@@ -147,11 +139,11 @@ TEST(Core_Functionality, HullGraham) {
     if (rank == 0) {
         std::vector<point> points(0);
         std::vector<int> indexes;
-        point p22 = point(2, 2);  // not in hall
-        point p42 = point(4, 2);  // 3
-        point p24 = point(2, 4);  // 4
-        point pm11 = point(-1, 1);  // 1
-        point p1m1 = point(1, -1);  // 2
+        point p22 = point(2, 2);
+        point p42 = point(4, 2);
+        point p24 = point(2, 4);
+        point pm11 = point(-1, 1);
+        point p1m1 = point(1, -1);
 
         points.push_back(p22);
         points.push_back(p42);
@@ -168,12 +160,6 @@ TEST(Core_Functionality, HullGraham) {
         points = Sort(points, first_point);
         ASSERT_EQ(isSorted(points, first_point), true);
         indexes = HullGraham(points);
-        // std::cout << "Indexes" << std::endl;
-
-        // std::cout << indexes[0] << std::endl;
-        // std::cout << indexes[1] << std::endl;
-        // std::cout << indexes[2] << std::endl;
-        // std::cout << indexes[3] << std::endl;
 
         ASSERT_EQ(indexes[0], 0);
         ASSERT_EQ(indexes[1], 1);
@@ -190,11 +176,11 @@ TEST(GrahamAlg, getConvexHull_Static_Points) {
         std::vector<point> points(0);
         std::vector<int> indexes;
         point pm2m2 = point(-2, -2);
-        point p22 = point(2, 2);  // not in hall
-        point p42 = point(4, 2);  // 3
-        point p24 = point(2, 4);  // 4
-        point pm11 = point(-1, 1);  // 1
-        point p1m1 = point(1, -1);  // 2
+        point p22 = point(2, 2);
+        point p42 = point(4, 2);
+        point p24 = point(2, 4);
+        point pm11 = point(-1, 1);
+        point p1m1 = point(1, -1);
 
         points.push_back(pm2m2);
         points.push_back(p22);
@@ -202,9 +188,6 @@ TEST(GrahamAlg, getConvexHull_Static_Points) {
         points.push_back(p24);
         points.push_back(pm11);
         points.push_back(p1m1);
-
-        //indexes = getConvexHull(points);
-        // ASSERT_TRUE(isSorted(points));
 
         int first_index = LowestPoint(points);
         point first_point = points[first_index];
@@ -214,7 +197,7 @@ TEST(GrahamAlg, getConvexHull_Static_Points) {
         points = Sort(points, first_point);
         indexes = HullGraham(points);
 
-        ASSERT_TRUE(isConvexHull(points, indexes)); // ??
+        ASSERT_TRUE(isConvexHull(points, indexes));
     }
 }
 
@@ -224,18 +207,16 @@ TEST(GrahamAlg, getConvexHull_Random_Points) {
 
     if (rank == 0) {
         std::vector<point> points = getRandomArray(100);
-        
-        std::cout << "Start Geraham" << std::endl;
+
         int first_index = LowestPoint(points);
         point first_point = points[first_index];
         point tmp = points[0];
         points[first_index] = tmp;
         points[0] = first_point;
-        
+
         points = Sort(points, first_point);
         std::vector<int> indexes = HullGraham(points);
-        
-        std::cout << "Start Check" << std::endl;
+
         ASSERT_TRUE(isConvexHull(points, indexes));
     }
 }
@@ -263,7 +244,6 @@ TEST(GrahamAlg, getConvexHullParellel_Random_Points) {
         points[0] = first_point;
     }
 
-    // first_index++;
     points = ParallelSort(points, first_point);
 
     if (rank == 0) {
@@ -275,7 +255,6 @@ TEST(GrahamAlg, getConvexHullParellel_Random_Points) {
         indexes = HullGraham(points);
 
         ASSERT_FALSE(indexes.empty());
-        // ASSERT_TRUE(indexes.size() > 0);
         ASSERT_TRUE(isConvexHull(points, indexes));
     }
 }

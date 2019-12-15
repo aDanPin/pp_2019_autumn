@@ -7,7 +7,7 @@
 
 struct point {
     double x, y;
-    // FIXME: index used only for tesing
+
     point(double X, double Y) {
         x = X;
         y = Y;
@@ -32,8 +32,6 @@ double area_triangle(point a, point b, point c);
 
 std::vector<point> getRandomArray(size_t size, int max_X = 100.0
                                              , int max_Y = 100.0);
-std::vector<int> getConvexHull(const std::vector<point>& p);
-// void getConvexHullParellel(const std::vector<point>& p, const std::vector<int> &ip);
 bool isConvexHull(const std::vector<point>& p, const std::vector<int> &ip);
 bool isSorted(const std::vector<point>& p, point first_point);
 

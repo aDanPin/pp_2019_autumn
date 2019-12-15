@@ -7,7 +7,6 @@
 #include <random>
 #include <algorithm>
 #include <ctime>
-#include <iostream>
 #include <cassert>
 #include "../../../modules/task_3/pinaev_d_graham_alg/graham.h"
 
@@ -19,7 +18,6 @@ std::vector<point> getRandomArray(size_t size, int max_X, int max_Y) {
     std::mt19937 gen;
     gen.seed((unsigned)time(0) + ++offset);
 
-    // FIXME: resize vector
     int x, y;
     for (size_t i = 0; i < vec.size(); ++i) {
         x = gen() % max_X;
@@ -78,7 +76,6 @@ std::vector<point> Merge(const std::vector<point>& src1, const std::vector<point
     std::vector<point> dest(first + second);
 
     int i = 0, j = 0, k = 0;
-    // std::cout<<first<<" "<<second<<"|||\n";
     while (i < first && j < second) {
         if (ccw(first_point, src1[i], src2[j]) >= 0) {  // src1 is lowest
             dest[k] = src1[i];
@@ -185,17 +182,14 @@ std::vector<point> ParallelSort(const std::vector<point>& points, point first_po
 }
 
 std::vector<int> HullGraham(const std::vector<point>& p) {
-    // std::cout << "1" << std::endl;
     std::vector<int> ip(p.size());
 
     int* ip_data = ip.data();
     ip_data[0] = 0;
-    // std::cout << "2" << std::endl;
 
     ip_data[1] = 1;
 
     size_t top = 1;
-    // std::cout << "3" << std::endl;
     size_t i = 2;
     size_t n = p.size();
     while (i < n) {
@@ -207,7 +201,6 @@ std::vector<int> HullGraham(const std::vector<point>& p) {
             ++i;
         }
     }
-    // std::cout << "4" << std::endl;
     ip.resize(top);
     return ip;
 }
@@ -218,10 +211,6 @@ bool isConvexHull(const std::vector<point>& p, const std::vector<int> &ip) {
 
     for (size_t i = 2; i < ip.size(); ++i)
         if (ccw(p[ip[i-2]], p[ip[i-1]], p[ip[i]]) < 0) {
-            std::cout << "Bad points: " << i << std::endl;
-            // std::cout << p[ip[i-2]].x << ' ' << p[ip[i-2]].y << std::endl;
-            // std::cout << p[ip[i-1]].x << ' ' << p[ip[i-1]].y << std::endl;
-            // std::cout << p[ip[i]].x << ' ' << p[ip[i]].y << std::endl;
             return false;
         }
 
