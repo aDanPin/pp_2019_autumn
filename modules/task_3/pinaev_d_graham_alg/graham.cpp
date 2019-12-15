@@ -47,7 +47,7 @@ double area_triangle(point a, point b, point c) {
 // ccw - против часовой стрелки
 int ccw(point p0, point p1, point p2) {
     double tmp = area_triangle(p0, p1, p2);
-    if (abs(tmp) < 1e-14)
+    if (std::abs(tmp) < 1e-14)
         return 0;
     if (tmp > 0)
         return 1;
