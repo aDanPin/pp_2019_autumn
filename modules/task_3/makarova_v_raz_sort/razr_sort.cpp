@@ -215,5 +215,4 @@ std::vector<int> ParallSort(std::vector<int> src) {
   }
 
   return local_vec;
-
 }

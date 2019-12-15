@@ -120,7 +120,6 @@ TEST(Razr_Sort, ParalSort) {
     if (rank == 0) {
         ASSERT_TRUE(isSorted(out));
     }
-
 }
 
 
