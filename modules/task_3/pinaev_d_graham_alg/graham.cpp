@@ -10,7 +10,6 @@
 #include <cassert>
 #include "../../../modules/task_3/pinaev_d_graham_alg/graham.h"
 
-const double PI = 3.1415;
 static int offset = 0;
 
 std::vector<point> getRandomArray(size_t size, int max_X, int max_Y) {
@@ -113,72 +112,42 @@ std::vector<point> ParallelSort(const std::vector<point>& points, point first_po
     MPI_Type_contiguous(2, MPI_DOUBLE, &MPI_Point);
     MPI_Type_commit(&MPI_Point);
 
-    int length, ost;
+    int n;
     if (rank == 0) {
-      length = points.size()/size;
-      ost = points.size() % size;
+        n = points.size() / size;
     }
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    MPI_Bcast(&length, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    std::vector<point>local_vec(length);
-
-    if (rank == 0 && ost != 0) {
-        local_vec.insert(local_vec.end(), points.end()-ost, points.end());
+    std::vector<int>sendcounts(size), displs(size);
+    for (int i = 0 ; i < size; i++) {
+        sendcounts[i] = points.size()/size + (rank < (signed)(points.size()%size)?1:0);
+        if (i != 0)
+            displs[i] = displs[i-1] + sendcounts[i-1];
     }
+    std::vector<point> dest(sendcounts[rank]);
+    MPI_Scatterv(points.data(), sendcounts.data(), displs.data(),
+                MPI_Point, dest.data(), sendcounts[rank],
+                MPI_Point, 0, MPI_COMM_WORLD);
 
-    int i = size;
-    int iter = 1;
-    int iter_length = length;
-    int partner;
-    int loc_size = length;
-    if (rank == 0)
-    loc_size += ost;
-    while (i > 1) {
-        if (i % 2 == 1) {
-            if (rank == 0) {
-                std::vector<point>neig_vec(iter_length);
+    dest = Sort(dest, first_point);
 
-                partner = pow2(iter - 1) * (i - 1);
-
-                MPI_Status status;
-                MPI_Recv(neig_vec.data(), iter_length, MPI_Point, partner, 0, MPI_COMM_WORLD, &status);
-
-                local_vec = Merge(local_vec, neig_vec, first_point);
-
-                loc_size += iter_length;
-            }
-            if (rank == pow2(iter - 1) * (i - 1)) {
-                MPI_Send(local_vec.data(), iter_length, MPI_Point, 0, 0, MPI_COMM_WORLD);
-
-                return local_vec;
-            }
-        }
-
-        if (rank % pow2(iter) == 0) {
-            partner = rank + pow2(iter-1);
-
-            std::vector<point> neig_vec(iter_length);
-
+    if (rank != 0) {
+        MPI_Send(dest.data(), sendcounts[rank], MPI_Point, 0, rank, MPI_COMM_WORLD);
+    }
+    if (rank == 0) {
+        std::vector<point> tmp(n);
+        for (int i = 1; i < size; ++i) {
             MPI_Status status;
-            MPI_Recv(neig_vec.data(), iter_length, MPI_Point, partner, 1, MPI_COMM_WORLD, &status);
-
-            local_vec = Merge(local_vec, neig_vec, first_point);
-
-            loc_size += iter_length;
+            MPI_Recv(tmp.data(), sendcounts[i], MPI_Point, MPI_ANY_SOURCE,
+                        MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            dest = Merge(dest, tmp, first_point);
         }
-        if (rank % pow2(iter) != 0) {
-            partner = rank - pow2(iter-1);
-
-            MPI_Send(local_vec.data(), iter_length, MPI_Point, partner, 1, MPI_COMM_WORLD);
-
-            return local_vec;
-        }
-        iter++;
-        i = i/2;
-        iter_length *= 2;
+        dest[0] = first_point;
     }
-    return local_vec;
+
+    MPI_Type_free(&MPI_Point);
+
+    return dest;
 }
 
 std::vector<int> HullGraham(const std::vector<point>& p) {
@@ -194,14 +163,15 @@ std::vector<int> HullGraham(const std::vector<point>& p) {
     size_t n = p.size();
     while (i < n) {
         if (ccw(p[ip[top - 1]], p[ip[top]], p[i]) < 0) {
-            --top;
+            if (top > 1)
+                --top;
         } else {
             ++top;
             ip[top] = i;
             ++i;
         }
     }
-    ip.resize(top);
+    ip.resize(top + 1);
     return ip;
 }
 
