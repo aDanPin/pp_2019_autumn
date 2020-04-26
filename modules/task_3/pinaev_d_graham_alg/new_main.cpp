@@ -95,68 +95,6 @@ std::vector<point> ParallelSort(const std::vector<point>& p, point first_point) 
     return dest;
 }
 
-
-std::vector<int> HullGraham(const std::vector<point>& p) {
-        std::vector<int> ip(p.size());
-
-    int* ip_data = ip.data();
-    ip_data[0] = 0;
-
-    ip_data[1] = 1;
-
-    size_t top = 1;
-    size_t i = 2;
-    size_t n = p.size();
-    
-    // std::cout<< 1<<std::endl;
-    while (i < n) {
-        int res = ccw(p[ip[top - 1]], p[ip[top]], p[i]);
-
-//        std::cout<< "Point number (i) "<< i <<std::endl;
-//        std::cout<< "Point p[ip[top - 1]] "<< p[ip[top - 1]].x<<' '<<p[ip[top - 1]].y <<std::endl;
-//        std::cout<< "Point p[ip[top]] "<<p[ip[top]].x<< ' '<< p[ip[top]].y <<std::endl;
-//        std::cout<< "Point p[i] "<< p[i].x << ' '<< p[i].y <<std::endl;
-//        std::cout<< "top "<< top <<std::endl;
-//        std::cout<< "res "<< res <<std::endl;
-//        std::cout <<std::endl <<std::endl;
-        
-
-        if (res == 0){ // на одной линии
-            ++top;
-            ip[top] = i;
-            ++i;
-        }
-        if (res == 1){  // против часовой стрелки
-            ++top;
-            ip[top] = i;
-            ++i;
-        }
-        if (res == -1){ // по часовой стрелке
-            if (top > 1)
-                --top;
-            else {
-                ip[top] = i;
-                ++i;
-            }
-
-        }
-
-
-//        if (ccw(p[ip[top - 1]], p[ip[top]], p[i]) < 0) {
-//            if (top > 1)
-//                --top;
-//        } else {
-//            ++top;
-//            ip[top] = i;
-//            ++i;
-//        }
-    }
-
-//    std::cout<< 2<<std::endl;
-
-    ip.resize(top + 1);
-    return ip;
-}
 std::vector<point> Merge(const std::vector<point>& src1, const std::vector<point>& src2
                         , point first_point) {
     int first = src1.size();
@@ -225,30 +163,6 @@ std::vector<point> getRandomArray(size_t size, int max_X = 100.0
     }
     return vec;
 }
-bool isConvexHull(const std::vector<point>& p, const std::vector<int> &ip){
-        if (ip.size() < 3)
-        return true;
-
-    for (size_t i = 2; i < ip.size(); ++i)
-        if (ccw(p[ip[i-2]], p[ip[i-1]], p[ip[i]]) < 0) {
-            return false;
-        }
-
-    return true;
-}
-
-bool isSorted(const std::vector<point>& p, point first_point) {
-    if (p.size() < 3)
-        return true;
-
-    for (size_t i = 2; i < p.size(); ++i) {
-        if (ccw(first_point, p[i], p[i - 1]) == 1) {
-            return false;
-        }
-    }
-    return true;
-}
-
 
 int main(int argc, char** argv) {
     int rank;
