@@ -237,8 +237,6 @@ bool isConvexHull(const std::vector<point>& p, const std::vector<int> &ip){
     return true;
 }
 
-
-
 bool isSorted(const std::vector<point>& p, point first_point) {
     if (p.size() < 3)
         return true;
@@ -253,7 +251,7 @@ bool isSorted(const std::vector<point>& p, point first_point) {
 
 
 int main(int argc, char** argv) {
-    int rank, int proc_num;
+    int rank;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -262,14 +260,10 @@ int main(int argc, char** argv) {
     std::vector<point> points;
     std::vector<int> indexes;
 
-    int in_p_size, out_p_size;
-
     size_t first_index;
     point first_point;
     if (rank == 0) {
-        points = getRandomArray(100);
-
-        in_p_size = points.size();
+        points = getRandomArray(size);
 
         first_index = LowestPoint(points);
         point first_point = points[first_index];
@@ -281,16 +275,75 @@ int main(int argc, char** argv) {
     points = ParallelSort(points, first_point); // parralel shit
 
     if (rank == 0) {
+        // Sort checking
+        bool isSorted = true;
+        if (points.size() < 3)
+            isSorted = true;
+        else {
+            for (size_t i = 2; i < points.size(); ++i) {
+                if (ccw(first_point, points[i], points[i - 1]) == 1) {
+                    isSorted = false;
+                    break;
+                }
+            }
+        }
 
-        if(isSorted(points, first_point))
+        if(isSorted)
             std::cout<< "Array is sorted"<<std::endl;
         else 
             std::cout<< "Array is not sorted!!!"<<std::endl;
 
 
-        indexes = HullGraham(points);
+//      HULL GRAHAM
+        indexes.resize(points.size());
 
-        if (isConvexHull(points, indexes))
+        int* ip_data = indexes.data();
+        ip_data[0] = 0;
+
+        ip_data[1] = 1;
+
+        size_t top = 1;
+        size_t i = 2;
+        size_t n = points.size();
+    
+        while (i < n) {
+            int res = ccw(points[indexes[top - 1]], points[indexes[top]], points[i]);
+
+            if (res == 0){ // на одной линии
+                ++top;
+                indexes[top] = i;
+                ++i;
+            }
+            if (res == 1){  // против часовой стрелки
+                ++top;
+                indexes[top] = i;
+                ++i;
+            }
+            if (res == -1){ // по часовой стрелке
+                if (top > 1)
+                    --top;
+                else {
+                    indexes[top] = i;
+                    ++i;
+                }
+
+            }
+        }
+
+        indexes.resize(top + 1);
+
+        bool isConvex = true;
+        if (indexes.size() < 3)
+            isConvex = true;
+        else {
+            for (size_t i = 2; i < indexes.size(); ++i)
+                if (ccw(points[indexes[i-2]], points[indexes[i-1]], points[indexes[i]]) < 0) {
+                    isConvex = false;
+                    break;
+                }
+        }
+
+        if (isConvex)
             std::cout<< "Convex is hull" << std::endl;
         else 
             std::cout<< "Convex is not hull!!!" << std::endl;
