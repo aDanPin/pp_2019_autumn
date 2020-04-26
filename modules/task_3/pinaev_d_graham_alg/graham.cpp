@@ -7,6 +7,7 @@
 #include <random>
 #include <algorithm>
 #include <ctime>
+#include <iostream>
 #include <cassert>
 #include "../../../modules/task_3/pinaev_d_graham_alg/graham.h"
 
@@ -161,16 +162,53 @@ std::vector<int> HullGraham(const std::vector<point>& p) {
     size_t top = 1;
     size_t i = 2;
     size_t n = p.size();
+    
+    // std::cout<< 1<<std::endl;
     while (i < n) {
-        if (ccw(p[ip[top - 1]], p[ip[top]], p[i]) < 0) {
-            if (top > 1)
-                --top;
-        } else {
+        int res = ccw(p[ip[top - 1]], p[ip[top]], p[i]);
+
+//        std::cout<< "Point number (i) "<< i <<std::endl;
+//        std::cout<< "Point p[ip[top - 1]] "<< p[ip[top - 1]].x<<' '<<p[ip[top - 1]].y <<std::endl;
+//        std::cout<< "Point p[ip[top]] "<<p[ip[top]].x<< ' '<< p[ip[top]].y <<std::endl;
+//        std::cout<< "Point p[i] "<< p[i].x << ' '<< p[i].y <<std::endl;
+//        std::cout<< "top "<< top <<std::endl;
+//        std::cout<< "res "<< res <<std::endl;
+//        std::cout <<std::endl <<std::endl;
+        
+
+        if (res == 0){ // на одной линии
             ++top;
             ip[top] = i;
             ++i;
         }
+        if (res == 1){  // против часовой стрелки
+            ++top;
+            ip[top] = i;
+            ++i;
+        }
+        if (res == -1){ // по часовой стрелке
+            if (top > 1)
+                --top;
+            else {
+                ip[top] = i;
+                ++i;
+            }
+
+        }
+
+
+//        if (ccw(p[ip[top - 1]], p[ip[top]], p[i]) < 0) {
+//            if (top > 1)
+//                --top;
+//        } else {
+//            ++top;
+//            ip[top] = i;
+//            ++i;
+//        }
     }
+
+//    std::cout<< 2<<std::endl;
+
     ip.resize(top + 1);
     return ip;
 }

@@ -5,6 +5,8 @@
 #include <vector>
 #include "./graham.h"
 
+#include <iostream>
+
 const double PI = 3.1415;
 
 TEST(Core_Functionality, Lowest_point) {
@@ -208,14 +210,21 @@ TEST(GrahamAlg, getConvexHull_Random_Points) {
     if (rank == 0) {
         std::vector<point> points = getRandomArray(100);
 
+        //std::cout<< 1<<std::endl;
+
         int first_index = LowestPoint(points);
         point first_point = points[first_index];
         point tmp = points[0];
         points[first_index] = tmp;
         points[0] = first_point;
-
+        //std::cout<< 2<<std::endl;
         points = Sort(points, first_point);
+        
+        //std::cout<< 3<<std::endl;
+        
         std::vector<int> indexes = HullGraham(points);
+
+        //std::cout<< 4<<std::endl;
 
         ASSERT_TRUE(isConvexHull(points, indexes));
     }
